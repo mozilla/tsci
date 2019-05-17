@@ -10,6 +10,14 @@
     "start": "GOOGLE_APPLICATION_CREDENTIALS='credentials.json' node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/past/tsci.git"
+  },
+  "bugs": {
+    "url": "https://github.com/past/tsci/issues"
+  },
+  "homepage": "https://github.com/past/tsci/blob/master/README.md",
   "author": "Panos Astithas <pastith@gmail.com>",
   "license": "MPL-2.0",
   "dependencies": {
