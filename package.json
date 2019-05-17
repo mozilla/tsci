@@ -1,0 +1,23 @@
+{
+  "name": "tsci",
+  "version": "1.0.0",
+  "description": "Calculate the Top Site Compatibility Index metric.",
+  "main": "index.js",
+  "engines": {
+    "node": ">=8"
+  },
+  "scripts": {
+    "start": "GOOGLE_APPLICATION_CREDENTIALS='credentials.json' node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Panos Astithas <pastith@gmail.com>",
+  "license": "MPL-2.0",
+  "dependencies": {
+    "googleapis": "^38.0.0",
+    "node-fetch": "^2.5.0"
+  },
+  "devDependencies": {
+    "eslint": "^5.16.0",
+    "eslint-plugin-import": "^2.17.2"
+  }
+}
