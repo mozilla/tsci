@@ -1,70 +1,9 @@
 const fs = require('fs');
-const fetch = require('node-fetch');
+const tranco = require('./tranco');
 const { google } = require('googleapis');
-
-// List configured as follows:
-// - include all four lists
-// - for the last 30 days
-// - using Dowdall rule
-// - full list
-// - include domains present for at least a week
-// - only include domains not flagged as dangerous by Google Safe Browsing
-// - only pay-level domains (eTLD+1)
-// - only include domains included in the Chrome User Experience Report
-// - result list size of LIST_SIZE
-// const TRANCO_LIST_ID = 'PNNJ';
 
 const LIST_SIZE = 500;
 const LIST_FILE = 'data/list.csv';
-
-const fetchList = async () => {
-    const LATEST_LIST_URL = 'https://tranco-list.eu/top-1m-id';
-
-    // Check for an already downloaded list.
-    const listIsCached = await fs.promises.access(LIST_FILE, fs.constants.R_OK | fs.constants.W_OK)
-        .then(() => true)
-        .catch(() => false);
-    if (listIsCached) {
-        console.log("Found cached Tranco list");
-        return;
-    }
-
-    // Create the data directory.
-    await new Promise((resolve, reject) => {
-        fs.mkdir('data', { recursive: true }, (err) => {
-            if (err) reject(err);
-            resolve();
-        });
-    });
-
-    // Fetch the latest list ID.
-    const LIST_ID = await fetch(LATEST_LIST_URL)
-        .then(res => {
-            if (!res.ok ||
-                res.headers.get('content-type') !== 'text/plain; charset=utf-8') {
-                throw new Error("Latest list ID not found!");
-            }
-            return res.text();
-        });
-
-    // Fetch the latest list.
-    const LIST_URL = `https://tranco-list.eu/download/${LIST_ID}/${LIST_SIZE}`;
-    await fetch(LIST_URL)
-        .then(res => {
-            if (!res.ok ||
-                res.headers.get('content-type') !== 'text/csv; charset=utf-8') {
-                throw new Error(`List ${LIST_ID} not found!`);
-            }
-            return new Promise(resolve => {
-                const dest = fs.createWriteStream(LIST_FILE);
-                res.body.pipe(dest);
-                dest.on('finish', () => {
-                    console.log(`Downloaded latest Tranco list, ID: ${LIST_ID}`);
-                    resolve();
-                });
-            });
-        });
-}
 
 async function createSpreadsheet(drive, title, file) {
     const fileMetadata = {
@@ -242,7 +181,7 @@ const shareSheet = async (drive, id, emailAddress) => {
 
 const main = async () => {
     const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
-    await fetchList();
+    await tranco.fetchList(LIST_SIZE, LIST_FILE);
     const auth = await google.auth.getClient({ scopes: SCOPES });
     const sheets = google.sheets({ version: 'v4', auth });
     const drive = google.drive({ version: 'v3', auth })
