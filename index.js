@@ -5,10 +5,11 @@ const bugs = require('./bugs');
 
 const LIST_SIZE = 500;
 const LIST_FILE = 'data/list.csv';
+const API_KEY_FILE = 'api-key.ini'
 
 const main = async () => {
     await tranco.fetchList(LIST_SIZE, LIST_FILE);
-    const bugTable = await bugs.fetchBugs(LIST_FILE);
+    const bugTable = await bugs.fetchBugs(LIST_FILE, API_KEY_FILE);
 
     const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
     const auth = await google.auth.getClient({ scopes: SCOPES });
