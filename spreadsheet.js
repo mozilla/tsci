@@ -28,14 +28,69 @@ async function createSpreadsheet(drive, title, file) {
     return spreadsheetId;
 }
 
+async function addBugData(sheets, spreadsheetId, bugTable) {
+    let result = await sheets.spreadsheets.get({
+        spreadsheetId,
+    });
+    const valueInputOption = 'USER_ENTERED';
+
+    const bugzilla = bugTable.get("bugzilla");
+    result = await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `C2:C${bugzilla.length + 1}`,
+        resource: {
+            values: [bugzilla],
+            majorDimension: "COLUMNS",
+        },
+        valueInputOption,
+    })
+    console.log('Updated bugzilla cells: ' + result.data.updatedCells);
+
+    const webcompat = bugTable.get("webcompat");
+    result = await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `D2:D${webcompat.length + 1}`,
+        resource: {
+            values: [webcompat],
+            majorDimension: "COLUMNS",
+        },
+        valueInputOption,
+    })
+    console.log('Updated webcompat cells: ' + result.data.updatedCells);
+
+    const criticals = bugTable.get("criticals");
+    result = await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `E2:E${criticals.length + 1}`,
+        resource: {
+            values: [criticals],
+            majorDimension: "COLUMNS",
+        },
+        valueInputOption,
+    })
+    console.log('Updated criticals cells: ' + result.data.updatedCells);
+
+    const duplicates = bugTable.get("duplicates");
+    result = await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `F2:F${duplicates.length + 1}`,
+        resource: {
+            values: [duplicates],
+            majorDimension: "COLUMNS",
+        },
+        valueInputOption,
+    })
+    console.log('Updated duplicates cells: ' + result.data.updatedCells);
+}
+
 async function addStaticData(sheets, spreadsheetId, listSize) {
     let result = await sheets.spreadsheets.get({
         spreadsheetId,
     });
     const { properties } = result.data.sheets[0]
     const sheetId = properties.sheetId;
-    const requests = [];
     const valueInputOption = 'USER_ENTERED';
+    const requests = [];
     const range = {
         "sheetId": sheetId,
         "startRowIndex": 0,
@@ -43,8 +98,8 @@ async function addStaticData(sheets, spreadsheetId, listSize) {
         "startColumnIndex": 0,
         "endColumnIndex": 2
     };
-    const headers = ['Rank', 'Website', 'bugzilla 🐞s', 'webcompat.com 🐞s',
-        'severity-critical 🐞s', 'duplicate 🐞s', 'critical weight', 'SCI', 'Site weight', 'Weighted SCI'];
+    const headers = ['Rank', 'Website', 'bugzilla', 'webcompat.com',
+        'criticals', 'duplicates', 'critical weight', 'SCI', 'Site weight', 'Weighted SCI'];
 
     // Fix sheet name.
     const now = new Date();
@@ -140,13 +195,19 @@ async function addStaticData(sheets, spreadsheetId, listSize) {
 
     const totals = [
         "Total",
+        "",
+        `=SUM(C2:C${listSize + 1})`,
+        `=SUM(D2:D${listSize + 1})`,
+        `=SUM(E2:E${listSize + 1})`,
+        `=SUM(F2:F${listSize + 1})`,
+        "",
         `=SUM(H2:H${listSize + 1})`,
         "",
         `=SUM(J2:J${listSize + 1})`
     ];
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `G${listSize + 2}:J${listSize + 2}`,
+        range: `A${listSize + 2}:J${listSize + 2}`,
         resource: {
             values: [totals],
         },
@@ -175,6 +236,7 @@ const shareSheet = async (drive, id, emailAddress) => {
 }
 
 module.exports = {
+    addBugData,
     addStaticData,
     createSpreadsheet,
     shareSheet,
