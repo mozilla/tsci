@@ -5,7 +5,8 @@ const bugs = require('./bugs');
 
 const LIST_SIZE = 500;
 const LIST_FILE = 'data/list.csv';
-const API_KEY_FILE = 'api-key.ini'
+const API_KEY_FILE = 'api-key.ini';
+const writers = ['pastith@gmail.com'];
 
 const main = async () => {
     await tranco.fetchList(LIST_SIZE, LIST_FILE);
@@ -21,7 +22,9 @@ const main = async () => {
     await spreadsheet.addStaticData(sheets, id, LIST_SIZE);
     await spreadsheet.addBugData(sheets, id, bugTable);
     // TODO add a graph
-    await spreadsheet.shareSheet(drive, id, 'pastith@gmail.com');
+    for (const writer of writers) {
+        await spreadsheet.shareSheet(drive, id, writer);
+    }
 }
 
 main();
