@@ -21,6 +21,9 @@
   "author": "Panos Astithas <pastith@gmail.com>",
   "license": "MPL-2.0",
   "dependencies": {
+    "@octokit/plugin-retry": "^2.2.0",
+    "@octokit/plugin-throttling": "^2.6.0",
+    "@octokit/rest": "^16.26.0",
     "googleapis": "^38.0.0",
     "node-fetch": "^2.5.0"
   },
