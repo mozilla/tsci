@@ -122,17 +122,17 @@ const getWebcompat = async (website, githubKey) => {
             }
         }
     });
-    const results = await octokit.issues.listForRepo({
-        owner: "webcompat",
-        repo: "web-bugs",
-        state: "open",
-        labels: "engine-gecko"
+    const results = await octokit.search.issuesAndPullRequests({
+        q: `${spaced}+in:title+repo:webcompat/web-bugs+state:open+label:engine-gecko`,
+        per_page: 100
     });
-    const geckoResults = results.data.filter(element => !element.pull_request)
-        .filter(element => element.title.includes(website));
-    const webcompatCount = geckoResults.length;
-    const criticals = geckoResults.filter(element => element.labels.includes("severity-critical"));
-    const criticalsCount = criticals.length;
+    const criticals = await octokit.search.issuesAndPullRequests({
+        q: `${spaced}+in:title+repo:webcompat/web-bugs+state:open+label:engine-gecko+label:severity-critical`,
+        per_page: 100
+    });
+    // TODO: handle pagination if the result is > 100
+    const webcompatCount = results.data.total_count;
+    const criticalsCount = criticals.data.total_count;
     return {
         webcompatResult: `=HYPERLINK("${webcompatQuery}"; ${webcompatCount})`,
         criticalsResult: `=HYPERLINK("${criticalsQuery}"; ${criticalsCount})`
