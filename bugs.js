@@ -196,7 +196,7 @@ const getDuplicates = async (website, bugzillaKey, githubKey) => {
             searchMapGhToBz = new Map();
         }
         searchQuery += "+" + githubId;
-        searchMapGhToBz.set([parseInt(githubId)], bzId);
+        searchMapGhToBz.set(parseInt(githubId), bzId);
     }
     searches.push([searchQuery, searchMapGhToBz]);
 
