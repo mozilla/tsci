@@ -222,20 +222,13 @@ const getDuplicates = async (website, bugzillaKey, githubKey) => {
     });
     for (const [query, ghToBzMap] of searches) {
         const milestoneSearch = `https://api.github.com/search/issues?per_page=100&q=${query}`;
-        // TODO use Octokit
-        // const results = await octokit.issues.listForRepo({
-        //     owner: "webcompat",
-        //     repo: "web-bugs",
-        //     state: "open",
-        //     labels: "engine-gecko"
-        // });
-        const results = await fetch(milestoneSearch)
+        const results = await octokit.request({url: milestoneSearch})
             .then(res => {
-                if (!res.ok) {
+                if (!res.data) {
                     console.log(util.inspect(res, { showHidden: false, depth: null }))
-                    throw new Error("Bugzilla query failed!");
+                    throw new Error("GitHub query failed!");
                 }
-                return res.json();
+                return res.data;
             });
         if (results.incomplete_results) {
             throw new Error("Should not have over 100 results for just ${ids.length} search items"); // TODO figure out ${ids.length}
