@@ -122,7 +122,7 @@ const getWebcompat = async (website, githubKey, minDate, maxDate) => {
         date_range += `+-closed:<=${formatDateForAPIQueries(maxDate)}`;
       }
     }
-    const webcompatQuery = `https://github.com/webcompat/web-bugs/issues?q=${spaced}${date_range}+in%3Atitle+${state}+label:engine-gecko&type=Issues`;
+    const webcompatQuery = `https://github.com/webcompat/web-bugs/issues?q=${spaced}${date_range}+in%3Atitle+${state}+label:engine-gecko`;
     const criticalsQuery = `https://github.com/webcompat/web-bugs/issues?q=${spaced}${date_range}+in%3Atitle+${state}+label%3Aseverity-critical+label:engine-gecko`;
     const octokit = new Octokit({
         auth: `token ${githubKey}`,
