@@ -20,3 +20,11 @@ Then run:
 npm install
 npm start
 ```
+
+A single argument may also be provided to specify a cut-off date, providing a best-effort view of what the historical
+results would have been, had the program been run at that date. Note that the end of the week for the given date is
+what is actually used, regardless of the day-of-week specified. For instance, this will return issue-counts up to
+and including Saturday May 25 2018:
+```
+npm start 2019-05-23
+```

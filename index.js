@@ -9,7 +9,7 @@ const API_KEY_FILE = 'api-key.ini';
 const writers = ['pastith@gmail.com'];
 
 const main = async () => {
-    let minDate, maxDate;
+    let maxDate;
     const week = process.argv[2];
     if (week) {
       // We want to consider open bugs only until the end of the given week.
@@ -20,7 +20,7 @@ const main = async () => {
     }
 
     await tranco.fetchList(LIST_SIZE, LIST_FILE);
-    const bugTable = await bugs.fetchBugs(LIST_FILE, API_KEY_FILE, minDate, maxDate);
+    const bugTable = await bugs.fetchBugs(LIST_FILE, API_KEY_FILE, undefined, maxDate);
 
     const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
     const auth = await google.auth.getClient({ scopes: SCOPES });

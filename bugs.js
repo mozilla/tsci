@@ -13,7 +13,7 @@ const Octokit = require('@octokit/rest')
  * @returns a Map of String keys to arrays of Strings that represent spreadsheet
  *          column data
  */
-const fetchBugs = async (listFile = 'data/list.csv', keyFile = 'api-key.ini', minDate = undefined, maxDate = undefined) => {
+const fetchBugs = async (listFile = 'data/list.csv', keyFile = 'api-key.ini', minDate, maxDate) => {
     const bugzilla = [];
     const webcompat = [];
     const criticals = [];
@@ -176,7 +176,7 @@ const getWebcompat = async (website, githubKey, minDate, maxDate) => {
  * @param {*} bugzillaKey
  * @param {*} githubKey
  */
-const getDuplicates = async (website, bugzillaKey, githubKey, minDate = undefined, maxDate = undefined) => {
+const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) => {
     const apiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,history&f1=see_also&f2=bug_status&f3=bug_file_loc&o1=anywordssubstr&o2=anywordssubstr&o3=casesubstring&v1=webcompat.com%2Cgithub.com%2Fwebcompat&v2=UNCONFIRMED%2CNEW%2CASSIGNED%2CREOPENED&v3=${website}&limit=0&api_key=${bugzillaKey}`
     const results = await fetch(apiQuery)
         .then(res => {
