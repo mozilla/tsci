@@ -130,16 +130,12 @@ const getWebcompat = async (website, githubKey, minDate, maxDate) => {
         throttle: {
             onRateLimit: (retryAfter, options) => {
                 octokit.log.warn(`Request quota exhausted for request to ${options.url}`)
-                console.log(`retry count: ${options.request.retryCount}`);
-                if (options.request.retryCount === 0) { // only retries once
-                    console.log(`Retrying after ${retryAfter} seconds!`)
-                    return true
-                }
-                return false;
+                octokit.log.warn(`Retry#${options.request.retryCount + 1} after ${retryAfter} seconds!`)
+                return true
             },
             onAbuseLimit: (retryAfter, options) => {
-                // does not retry, only logs a warning
-                octokit.log.warn(`Abuse detected for request to ${options.url}`)
+                // Don't retry, only log an error.
+                octokit.log.error(`Abuse detected for request to ${options.url}!`)
             }
         }
     });
@@ -238,16 +234,12 @@ const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) 
         throttle: {
             onRateLimit: (retryAfter, options) => {
                 octokit.log.warn(`Request quota exhausted for request to ${options.url}`)
-                console.log(`retry count: ${options.request.retryCount}`);
-                if (options.request.retryCount === 0) { // only retries once
-                    console.log(`Retrying after ${retryAfter} seconds!`)
-                    return true
-                }
-                return false;
+                octokit.log.warn(`Retry#${options.request.retryCount + 1} after ${retryAfter} seconds!`)
+                return true
             },
             onAbuseLimit: (retryAfter, options) => {
-                // does not retry, only logs a warning
-                octokit.log.warn(`Abuse detected for request to ${options.url}`)
+                // Don't retry, only log an error.
+                octokit.log.error(`Abuse detected for request to ${options.url}!`)
             }
         }
     });
