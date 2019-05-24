@@ -97,6 +97,65 @@ const getBugzilla = async (website, bugzillaKey, minDate, maxDate) => {
 }
 
 /**
+ * Returns an instance of Octokit set up as we want it.
+ * @param {*} githubKey
+ * @returns an Octokit instance
+ */
+const getOctokitInstance = (function() {
+    let singletons = new Map();
+    return function getOctokitInstance(githubKey) {
+        if (!singletons.has(githubKey)) {
+            singletons.set(githubKey, new Octokit({
+                auth: `token ${githubKey}`,
+                userAgent: 'past/tsci',
+                throttle: {
+                    onRateLimit: (retryAfter, options) => {
+                        octokit.log.warn(`Request quota exhausted for request to ${options.url}`)
+                        console.log(`retry count: ${options.request.retryCount}`);
+                        if (options.request.retryCount === 0) { // only retries once
+                            console.log(`Retrying after ${retryAfter} seconds!`)
+                            return true
+                        }
+                        return false;
+                    },
+                    onAbuseLimit: (retryAfter, options) => {
+                        // does not retry, only logs a warning
+                        octokit.log.warn(`Abuse detected for request to ${options.url}`)
+                    }
+                }
+            }));
+        }
+        return singletons.get(githubKey);
+    };
+})();
+
+/**
+ * Dances the pagination dance for Octokit-based queries to GitHub.
+ * @param {*} query
+ * @param {*} params
+ * @returns an array of results
+ */
+async function getAllGitHubResultsFor(query, params = {}) {
+    let results = [];
+    let expected;
+    if (!("per_page" in params)) {
+        params.per_page = 100;
+    }
+    params.page = 0; // Note: this parameter is 1-based, not 0-based
+    while (expected === undefined || results.length < expected) {
+        ++params.page;
+        const response = await query.call(this, params);
+        if (!response.data) {
+            console.log(util.inspect(res, { showHidden: false, depth: null }))
+            throw new Error("GitHub query failed!");
+        }
+        expected = response.data.total_count;
+        results = results.concat(response.data.items);
+    }
+    return results;
+}
+
+/**
  * Returns open webcompat bugs that have the `engine-gecko` label and
  * severity-critical webcompat bugs.
  * That should be:
@@ -124,39 +183,16 @@ const getWebcompat = async (website, githubKey, minDate, maxDate) => {
     }
     const webcompatQuery = `https://github.com/webcompat/web-bugs/issues?q=${spaced}${date_range}+in%3Atitle+${state}+label:engine-gecko`;
     const criticalsQuery = `https://github.com/webcompat/web-bugs/issues?q=${spaced}${date_range}+in%3Atitle+${state}+label%3Aseverity-critical+label:engine-gecko`;
-    const octokit = new Octokit({
-        auth: `token ${githubKey}`,
-        userAgent: 'past/tsci',
-        throttle: {
-            onRateLimit: (retryAfter, options) => {
-                octokit.log.warn(`Request quota exhausted for request to ${options.url}`)
-                console.log(`retry count: ${options.request.retryCount}`);
-                if (options.request.retryCount === 0) { // only retries once
-                    console.log(`Retrying after ${retryAfter} seconds!`)
-                    return true
-                }
-                return false;
-            },
-            onAbuseLimit: (retryAfter, options) => {
-                // does not retry, only logs a warning
-                octokit.log.warn(`Abuse detected for request to ${options.url}`)
-            }
-        }
-    });
-    const results = await octokit.search.issuesAndPullRequests({
+    const octokit = getOctokitInstance(githubKey);
+    const results = await getAllGitHubResultsFor(octokit.search.issuesAndPullRequests, {
         q: `${spaced}${date_range}+in:title+repo:webcompat/web-bugs${state}+label:engine-gecko`,
-        per_page: 100
     });
-    const criticals = await octokit.search.issuesAndPullRequests({
+    const criticals = await getAllGitHubResultsFor(await octokit.search.issuesAndPullRequests, {
         q: `${spaced}${date_range}+in:title+repo:webcompat/web-bugs${state}+label:engine-gecko+label:severity-critical`,
-        per_page: 100
     });
-    // TODO: handle pagination if the result is > 100
-    const webcompatCount = results.data.total_count;
-    const criticalsCount = criticals.data.total_count;
     return {
-        webcompatResult: `=HYPERLINK("${webcompatQuery}"; ${webcompatCount})`,
-        criticalsResult: `=HYPERLINK("${criticalsQuery}"; ${criticalsCount})`
+        webcompatResult: `=HYPERLINK("${webcompatQuery}"; ${results.length})`,
+        criticalsResult: `=HYPERLINK("${criticalsQuery}"; ${criticals.length})`
     };
 }
 
@@ -232,39 +268,11 @@ const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) 
     searches.push([searchQuery, searchMapGhToBz]);
 
     const dupedBzIds = new Set();
-    const octokit = new Octokit({
-        auth: `token ${githubKey}`,
-        userAgent: 'past/tsci',
-        throttle: {
-            onRateLimit: (retryAfter, options) => {
-                octokit.log.warn(`Request quota exhausted for request to ${options.url}`)
-                console.log(`retry count: ${options.request.retryCount}`);
-                if (options.request.retryCount === 0) { // only retries once
-                    console.log(`Retrying after ${retryAfter} seconds!`)
-                    return true
-                }
-                return false;
-            },
-            onAbuseLimit: (retryAfter, options) => {
-                // does not retry, only logs a warning
-                octokit.log.warn(`Abuse detected for request to ${options.url}`)
-            }
-        }
-    });
+    const octokit = getOctokitInstance(githubKey);
     for (const [query, ghToBzMap] of searches) {
         const milestoneSearch = `https://api.github.com/search/issues?per_page=100&q=${query}`;
-        const results = await octokit.request({url: milestoneSearch})
-            .then(res => {
-                if (!res.data) {
-                    console.log(util.inspect(res, { showHidden: false, depth: null }))
-                    throw new Error("GitHub query failed!");
-                }
-                return res.data;
-            });
-        if (results.incomplete_results) {
-            throw new Error("Should not have over 100 results for just ${ids.length} search items"); // TODO figure out ${ids.length}
-        }
-        for (const item of results.items) {
+        const results = await getAllGitHubResultsFor(octokit.request, {url: milestoneSearch});
+        for (const item of results) {
             const bzId = ghToBzMap.get(item.number);
             if (bzId && item.milestone.title === "duplicate") {
                 dupedBzIds.add(bzId);
