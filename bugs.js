@@ -102,7 +102,7 @@ const getBugzilla = async (website, bugzillaKey, minDate, maxDate) => {
  * @returns an Octokit instance
  */
 const getOctokitInstance = (function() {
-    let singletons = new Map();
+    const singletons = new Map();
     return function getOctokitInstance(githubKey) {
         if (!singletons.has(githubKey)) {
             singletons.set(githubKey, new Octokit({
@@ -110,17 +110,13 @@ const getOctokitInstance = (function() {
                 userAgent: 'past/tsci',
                 throttle: {
                     onRateLimit: (retryAfter, options) => {
-                        octokit.log.warn(`Request quota exhausted for request to ${options.url}`)
-                        console.log(`retry count: ${options.request.retryCount}`);
-                        if (options.request.retryCount === 0) { // only retries once
-                            console.log(`Retrying after ${retryAfter} seconds!`)
-                            return true
-                        }
-                        return false;
+                        console.warn(`Request quota exhausted for request to ${options.url}`)
+                        console.warn(`Retry#${options.request.retryCount + 1} after ${retryAfter} seconds!`)
+                        return true
                     },
                     onAbuseLimit: (retryAfter, options) => {
-                        // does not retry, only logs a warning
-                        octokit.log.warn(`Abuse detected for request to ${options.url}`)
+                        // Don't retry, only log an error.
+                        console.error(`Abuse detected for request to ${options.url}!`)
                     }
                 }
             }));
@@ -146,7 +142,7 @@ async function getAllGitHubResultsFor(query, params = {}) {
         ++params.page;
         const response = await query.call(this, params);
         if (!response.data) {
-            console.log(util.inspect(res, { showHidden: false, depth: null }))
+            console.log(util.inspect(response, { showHidden: false, depth: null }))
             throw new Error("GitHub query failed!");
         }
         expected = response.data.total_count;
