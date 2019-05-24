@@ -13,7 +13,7 @@ const Octokit = require('@octokit/rest')
  * @returns a Map of String keys to arrays of Strings that represent spreadsheet
  *          column data
  */
-const fetchBugs = async (listFile = 'data/list.csv', keyFile = 'api-key.ini') => {
+const fetchBugs = async (listFile = 'data/list.csv', keyFile = 'api-key.ini', minDate, maxDate) => {
     const bugzilla = [];
     const webcompat = [];
     const criticals = [];
@@ -39,9 +39,9 @@ const fetchBugs = async (listFile = 'data/list.csv', keyFile = 'api-key.ini') =>
 
     for await (const line of rl) {
         const website = line.split(',')[1];
-        bugzilla.push(await getBugzilla(website, bugzillaKey));
-        duplicates.push(await getDuplicates(website, bugzillaKey, githubKey));
-        const { webcompatResult, criticalsResult } = await getWebcompat(website, githubKey);
+        bugzilla.push(await getBugzilla(website, bugzillaKey, minDate, maxDate));
+        duplicates.push(await getDuplicates(website, bugzillaKey, githubKey, minDate, maxDate));
+        const { webcompatResult, criticalsResult } = await getWebcompat(website, githubKey, minDate, maxDate);
         webcompat.push(webcompatResult);
         criticals.push(criticalsResult);
         console.log(`Fetched bug data for website ${website}`);
@@ -68,14 +68,23 @@ const getKeys = async (keyFile) => {
     return apiKeys;
 }
 
+function formatDateForAPIQueries(date) {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 /**
  * Returns Bugzilla bugs created after 2018-01-01.
  * @param {*} website
  * @param {*} bugzillaKey
  */
-const getBugzilla = async (website, bugzillaKey) => {
-    const query = `https://bugzilla.mozilla.org/buglist.cgi?f1=OP&bug_file_loc_type=allwordssubstr&o3=greaterthan&list_id=14636479&v3=2018&resolution=---&bug_file_loc=${website}&query_format=advanced&f3=creation_ts&bug_status=UNCONFIRMED&bug_status=NEW&bug_status=ASSIGNED&bug_status=REOPENED&product=Core&product=Fenix&product=Firefox%20for%20Android&product=Firefox%20for%20Echo%20Show&product=Firefox%20for%20FireTV&product=Firefox%20for%20iOS&product=GeckoView&product=Web%20Compatibility&keywords_type=nowords&keywords=meta%2C%20&status_whiteboard_type=notregexp&status_whiteboard=sci%5C-exclude`;
-    const apiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status&bug_file_loc=${website}&bug_file_loc_type=allwordssubstr&bug_status=UNCONFIRMED&bug_status=NEW&bug_status=ASSIGNED&bug_status=REOPENED&f1=OP&f3=creation_ts&keywords=meta%2C%20&keywords_type=nowords&o3=greaterthan&product=Core&product=Fenix&product=Firefox%20for%20Android&product=Firefox%20for%20Echo%20Show&product=Firefox%20for%20FireTV&product=Firefox%20for%20iOS&product=GeckoView&product=Web%20Compatibility&resolution=---&status_whiteboard=sci%5C-exclude&status_whiteboard_type=notregexp&v3=2018&api_key=${bugzillaKey}`;
+const getBugzilla = async (website, bugzillaKey, minDate, maxDate) => {
+    const minDateQuery = minDate ? formatDateForAPIQueries(minDate) : "2018";
+    const maxDateQueryFragment = maxDate ? `&f4=creation_ts&o4=lessthaneq&v4=${formatDateForAPIQueries(maxDate)}` : "";
+    const query = `https://bugzilla.mozilla.org/buglist.cgi?f1=OP&bug_file_loc_type=allwordssubstr&o3=greaterthaneq&list_id=14636479&v3=${minDateQuery}&resolution=---&bug_file_loc=${website}&query_format=advanced&f3=creation_ts&bug_status=UNCONFIRMED&bug_status=NEW&bug_status=ASSIGNED&bug_status=REOPENED&product=Core&product=Fenix&product=Firefox%20for%20Android&product=Firefox%20for%20Echo%20Show&product=Firefox%20for%20FireTV&product=Firefox%20for%20iOS&product=GeckoView&product=Web%20Compatibility&keywords_type=nowords&keywords=meta%2C%20&status_whiteboard_type=notregexp&status_whiteboard=sci%5C-exclude${maxDateQueryFragment}`;
+    const apiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status&bug_file_loc=${website}&bug_file_loc_type=allwordssubstr&bug_status=UNCONFIRMED&bug_status=NEW&bug_status=ASSIGNED&bug_status=REOPENED&f1=OP&f3=creation_ts&keywords=meta%2C%20&keywords_type=nowords&o3=greaterthaneq&product=Core&product=Fenix&product=Firefox%20for%20Android&product=Firefox%20for%20Echo%20Show&product=Firefox%20for%20FireTV&product=Firefox%20for%20iOS&product=GeckoView&product=Web%20Compatibility&resolution=---&status_whiteboard=sci%5C-exclude&status_whiteboard_type=notregexp&v3=${minDateQuery}&api_key=${bugzillaKey}${maxDateQueryFragment}`;
     const results = await fetch(apiQuery)
         .then(res => {
             if (!res.ok) {
@@ -99,10 +108,22 @@ const getBugzilla = async (website, bugzillaKey) => {
  * @returns an Object with a webcompatResult and a criticalsResult properties
  *          that correspond to each query
  */
-const getWebcompat = async (website, githubKey) => {
+const getWebcompat = async (website, githubKey, minDate, maxDate) => {
     const spaced = website.replace(/\./g, " ");
-    const webcompatQuery = `https://github.com/search?q=${spaced}+in%3Atitle+repo%3Awebcompat%2Fweb-bugs%2F+state%3Aopen+label:engine-gecko&type=Issues`;
-    const criticalsQuery = `https://github.com/webcompat/web-bugs/issues?q=${spaced}+in%3Atitle+repo%3Awebcompat%2Fweb-bugs%2F+is%3Aopen+label%3Aseverity-critical+label:engine-gecko`;
+    let state = "+state:open"
+    let date_range = "";
+    if (minDate || maxDate) {
+      date_range += "+created:" + [
+        minDate ? formatDateForAPIQueries(minDate) : "*",
+        maxDate ? formatDateForAPIQueries(maxDate) : "*",
+      ].join("..");
+      if (maxDate) {
+        state = "";
+        date_range += `+-closed:<=${formatDateForAPIQueries(maxDate)}`;
+      }
+    }
+    const webcompatQuery = `https://github.com/webcompat/web-bugs/issues?q=${spaced}${date_range}+in%3Atitle+${state}+label:engine-gecko`;
+    const criticalsQuery = `https://github.com/webcompat/web-bugs/issues?q=${spaced}${date_range}+in%3Atitle+${state}+label%3Aseverity-critical+label:engine-gecko`;
     const octokit = new Octokit({
         auth: `token ${githubKey}`,
         userAgent: 'past/tsci',
@@ -123,11 +144,11 @@ const getWebcompat = async (website, githubKey) => {
         }
     });
     const results = await octokit.search.issuesAndPullRequests({
-        q: `${spaced}+in:title+repo:webcompat/web-bugs+state:open+label:engine-gecko`,
+        q: `${spaced}${date_range}+in:title+repo:webcompat/web-bugs${state}+label:engine-gecko`,
         per_page: 100
     });
     const criticals = await octokit.search.issuesAndPullRequests({
-        q: `${spaced}+in:title+repo:webcompat/web-bugs+state:open+label:engine-gecko+label:severity-critical`,
+        q: `${spaced}${date_range}+in:title+repo:webcompat/web-bugs${state}+label:engine-gecko+label:severity-critical`,
         per_page: 100
     });
     // TODO: handle pagination if the result is > 100
@@ -155,8 +176,8 @@ const getWebcompat = async (website, githubKey) => {
  * @param {*} bugzillaKey
  * @param {*} githubKey
  */
-const getDuplicates = async (website, bugzillaKey, githubKey) => {
-    const apiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,see_also&f1=see_also&f2=bug_status&f3=bug_file_loc&o1=anywordssubstr&o2=anywordssubstr&o3=casesubstring&v1=webcompat.com%2Cgithub.com%2Fwebcompat&v2=UNCONFIRMED%2CNEW%2CASSIGNED%2CREOPENED&v3=${website}&limit=0&api_key=${bugzillaKey}`
+const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) => {
+    const apiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,history&f1=see_also&f2=bug_status&f3=bug_file_loc&o1=anywordssubstr&o2=anywordssubstr&o3=casesubstring&v1=webcompat.com%2Cgithub.com%2Fwebcompat&v2=UNCONFIRMED%2CNEW%2CASSIGNED%2CREOPENED&v3=${website}&limit=0&api_key=${bugzillaKey}`
     const results = await fetch(apiQuery)
         .then(res => {
             if (!res.ok) {
@@ -170,17 +191,27 @@ const getDuplicates = async (website, bugzillaKey, githubKey) => {
     const regex = /\/(\d+)$/;
     for (const bug of results.bugs) {
         const bzId = bug.id;
-        for (const seeAlsoLink of bug.see_also) {
-            if (seeAlsoLink.includes("webcompat.com") ||
-                seeAlsoLink.includes("github.com/webcompat")) {
-                    const matches = regex.exec(seeAlsoLink);
+        for (const {when, changes} of bug.history) {
+          const date = new Date(when);
+          if ((minDate && date < minDate) || (maxDate && date > maxDate)) {
+            continue;
+          }
+          for (const {added, field_name} of changes) {
+            if (!added || field_name !== "see_also") {
+                continue;
+            }
+            if (added.includes("webcompat.com") ||
+                added.includes("github.com/webcompat")) {
+                    const matches = regex.exec(added);
                     if (matches) {
                         const githubId = matches[matches.length - 1];
                         githubCandidates.push([githubId, bzId]);
                     }
                 }
+            }
         }
     }
+
     // GitHub search queries (q parameter) cannot be too long, so do >1 requests.
     const searches = [];
     const baseSearchQuery = "is%3Aissue+milestone%3Aduplicate+repo%3Awebcompat%2Fweb-bugs%2F";
