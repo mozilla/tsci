@@ -4,7 +4,7 @@ const spreadsheet = require('./spreadsheet');
 const bugs = require('./bugs');
 
 const LIST_SIZE = 500;
-const LIST_FILE = 'data/list.csv';
+const LIST_DIR = 'data/';
 const API_KEY_FILE = 'api-key.ini';
 const writers = ['pastith@gmail.com'];
 
@@ -12,14 +12,17 @@ const main = async () => {
     let maxDate;
     const week = process.argv[2];
     if (week) {
-      // We want to consider open bugs only until the end of the given week.
-      const parsed = new Date(week);
-      const weekday = parsed.getDay();
-      parsed.setDate(parsed.getDate() - weekday + 7);
-      maxDate = new Date(parsed - 1);
+        // We want to consider open bugs only until the end of the given week.
+        const parsed = new Date(week);
+        if (isNaN(parsed)) {
+            throw new Error("Wrong date format: use yyyy-mm-dd");
+        }
+        const weekday = parsed.getDay();
+        parsed.setDate(parsed.getDate() - weekday + 7);
+        maxDate = new Date(parsed - 1);
     }
 
-    await tranco.fetchList(LIST_SIZE, LIST_FILE);
+    const LIST_FILE = await tranco.fetchList(LIST_SIZE, LIST_DIR, maxDate);
     const bugTable = await bugs.fetchBugs(LIST_FILE, API_KEY_FILE, undefined, maxDate);
 
     const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
