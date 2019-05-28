@@ -7,12 +7,29 @@ Requires [Node](https://nodejs.org/) 8+ and a [Google Cloud Platform](https://cl
 You need to [create](https://cloud.google.com/docs/authentication/getting-started) a service account and download
 the JSON file containing the authentication credentials. Put that file in the project workspace as `credentials.json`.
 
-Create another file in the project workspace named `api-key.ini` containing API keys for
-[Bugzilla](https://bugzilla.mozilla.org/userprefs.cgi?tab=apikey) and
-[GitHub](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line), like this:
+Create another file in the project workspace named `config.json` containing configuration overrides for your needs,
+like API keys for [Bugzilla](https://bugzilla.mozilla.org/userprefs.cgi?tab=apikey) and
+[GitHub](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line).
+Omit any keys where the defaults would suffice. Here is what the a `config.json` with the defaults would look like
+(modulo the comments):
 ```
-bugzillaKey=xxxxxxxxxx
-githubKey=zzzzzzzzzzzz
+{
+  // The size of the Tranco list to download, up to 1 million sites.
+  "listSize": 500,
+  // The directory that will be used to store the downloaded list.
+  "listDir": "data/",
+  // The Bugzilla API authentication key.
+  "bugzillaKey": "",
+  // The GitHub API authentication key.
+  "githubKey": "",
+  // A cutoff date for calculating the TSCI (if not a Sunday, will be rounded to the next Sunday).
+  // E.g. a value of "2019-03-01" would lead to using "2019-03-03" (March 1st was a Friday).
+  "maxDate": null,
+  // A list of Google accounts with whom the final spreadsheet should be shared.
+  "writers": [
+    "user@example.com"
+  ]
+}
 ```
 
 Then run:

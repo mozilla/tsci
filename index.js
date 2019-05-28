@@ -3,14 +3,16 @@ const tranco = require('./tranco');
 const spreadsheet = require('./spreadsheet');
 const bugs = require('./bugs');
 
-const LIST_SIZE = 500;
-const LIST_DIR = 'data/';
-const API_KEY_FILE = 'api-key.ini';
-const writers = ['pastith@gmail.com'];
-
 const main = async () => {
-    let maxDate;
-    const week = process.argv[2];
+    const config = require('./config.json');
+    const LIST_SIZE = config.listSize || 500;
+    const LIST_DIR = config.listDir || 'data/';
+    const bugzillaKey = config.bugzillaKey || '';
+    const githubKey = config.githubKey || '';
+    const writers = config.writers || ['user@example.com'];
+    let maxDate = config.maxDate || null;
+
+    const week = process.argv[2] || maxDate;
     if (week) {
         // We want to consider open bugs only until the end of the given week.
         const parsed = new Date(week);
@@ -23,7 +25,7 @@ const main = async () => {
     }
 
     const LIST_FILE = await tranco.fetchList(LIST_SIZE, LIST_DIR, maxDate);
-    const bugTable = await bugs.fetchBugs(LIST_FILE, API_KEY_FILE, undefined, maxDate);
+    const bugTable = await bugs.fetchBugs(LIST_FILE, bugzillaKey, githubKey, undefined, maxDate);
 
     const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
     const auth = await google.auth.getClient({ scopes: SCOPES });
