@@ -1,0 +1,10 @@
+{
+  "listSize": 500,
+  "listDir": "data/",
+  "bugzillaKey": "",
+  "githubKey": "",
+  "maxDate": null,
+  "writers": [
+    "user@example.com"
+  ]
+}

@@ -7,11 +7,11 @@ Requires [Node](https://nodejs.org/) 8+ and a [Google Cloud Platform](https://cl
 You need to [create](https://cloud.google.com/docs/authentication/getting-started) a service account and download
 the JSON file containing the authentication credentials. Put that file in the project workspace as `credentials.json`.
 
-Create another file in the project workspace named `config.json` containing configuration overrides for your needs,
-like API keys for [Bugzilla](https://bugzilla.mozilla.org/userprefs.cgi?tab=apikey) and
+Copy `config.json.example` in the project workspace to a file named `config.json` and edit accordingly,
+notably the API keys for [Bugzilla](https://bugzilla.mozilla.org/userprefs.cgi?tab=apikey) and
 [GitHub](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line).
-Omit any keys where the defaults would suffice. Here is what the a `config.json` with the defaults would look like
-(modulo the comments):
+You can omit any keys where the defaults would suffice. Here is what a commented `config.json.example`
+would look like:
 ```
 {
   // The size of the Tranco list to download, up to 1 million sites.
