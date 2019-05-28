@@ -1,5 +1,5 @@
 node_modules
 data
+config.json
 credentials.json
-api-key.ini
 .vscode/

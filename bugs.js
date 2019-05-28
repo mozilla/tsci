@@ -13,7 +13,7 @@ const Octokit = require('@octokit/rest')
  * @returns a Map of String keys to arrays of Strings that represent spreadsheet
  *          column data
  */
-const fetchBugs = async (listFile = 'data/list.csv', keyFile = 'api-key.ini', minDate, maxDate) => {
+const fetchBugs = async (listFile = 'data/list.csv', bugzillaKey, githubKey, minDate, maxDate) => {
     const bugzilla = [];
     const webcompat = [];
     const criticals = [];
@@ -24,11 +24,6 @@ const fetchBugs = async (listFile = 'data/list.csv', keyFile = 'api-key.ini', mi
     bugTable.set("webcompat", webcompat);
     bugTable.set("criticals", criticals);
     bugTable.set("duplicates", duplicates);
-
-    // Load service API keys.
-    const apiKeys = await getKeys(keyFile);
-    const bugzillaKey = apiKeys.get("bugzillaKey");
-    const githubKey = apiKeys.get("githubKey");
 
     // Load the website list.
     const fileStream = fs.createReadStream(listFile);
@@ -47,25 +42,6 @@ const fetchBugs = async (listFile = 'data/list.csv', keyFile = 'api-key.ini', mi
         console.log(`Fetched bug data for website ${website}`);
     }
     return bugTable;
-}
-
-/**
- * Load the service API keys from the provided file.
- * @param {*} keyFile
- */
-const getKeys = async (keyFile) => {
-    const apiKeys = new Map();
-    const fileStream = fs.createReadStream(keyFile);
-    const rl = readline.createInterface({
-        input: fileStream,
-        crlfDelay: Infinity
-    });
-    for await (const line of rl) {
-        const [service, key] = line.split('=');
-        apiKeys.set(service, key);
-        console.log(`Loaded key ${key} for service ${service}`);
-    }
-    return apiKeys;
 }
 
 function formatDateForAPIQueries(date) {

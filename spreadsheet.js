@@ -18,7 +18,6 @@ async function createSpreadsheet(drive, title, file) {
             if (err) {
                 reject(err);
             } else {
-                // console.log(file);
                 resolve(file.data.id);
             }
         });
