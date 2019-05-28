@@ -82,7 +82,7 @@ async function addBugData(sheets, spreadsheetId, bugTable) {
     console.log('Updated duplicates cells: ' + result.data.updatedCells);
 }
 
-async function addStaticData(sheets, spreadsheetId, listSize) {
+async function addStaticData(sheets, spreadsheetId, listSize, maxDate) {
     let result = await sheets.spreadsheets.get({
         spreadsheetId,
     });
@@ -101,12 +101,15 @@ async function addStaticData(sheets, spreadsheetId, listSize) {
         'criticals', 'duplicates', 'critical weight', 'SCI', 'Site weight', 'Weighted SCI'];
 
     // Fix sheet name.
-    const now = new Date();
+    if (!maxDate) {
+        maxDate = new Date();
+    }
+    const title = `${maxDate.getFullYear()}/${(maxDate.getMonth() + 1)}/${maxDate.getDate()}`;
     requests.push({
         "updateSheetProperties": {
             "properties": {
                 "sheetId": sheetId,
-                "title": (now.getMonth() + 1) + '/' + now.getDate(),
+                title,
             },
             "fields": "title"
         },
