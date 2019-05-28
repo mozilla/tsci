@@ -193,6 +193,44 @@ const getWebcompat = async (website, githubKey, minDate, maxDate) => {
 }
 
 /**
+ * Returns the list of see-also links for a given Bugzilla bug.
+ *
+ * @param {*} a Bugzilla bug's metadata including its creation_time,
+ *            see_also, and history fields.
+ * @returns a Map of the bug's see-also links mapped to the date they were added.
+ */
+function getSeeAlsoLinks(bug) {
+    const seeAlsos = new Map();
+
+    const date = new Date(bug.creation_time);
+    for (const initial of bug.see_also) {
+        for (const url of initial.split(",")) {
+            seeAlsos.set(url.trim(), date);
+        }
+    }
+
+    for (const {when, changes} of bug.history.sort((a, b) => b.when - a.when)) {
+        const date = new Date(when);
+        for (const {added, removed, field_name} of changes) {
+            if (field_name === "see_also") {
+                if (removed) {
+                    for (const url of removed.split(",")) {
+                        seeAlsos.delete(url.trim());
+                    }
+                }
+                if (added) {
+                    for (const url of added.split(",")) {
+                        seeAlsos.set(url.trim(), date);
+                    }
+                }
+            }
+        }
+    }
+
+    return seeAlsos;
+}
+
+/**
  * Returns duplicates (webcompat.com see-also links on Bugzilla,
  * which are also marked as duplicates on webcompat.com)
  *
@@ -209,7 +247,7 @@ const getWebcompat = async (website, githubKey, minDate, maxDate) => {
  * @param {*} githubKey
  */
 const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) => {
-    const apiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,history&f1=see_also&f2=bug_status&f3=bug_file_loc&o1=anywordssubstr&o2=anywordssubstr&o3=casesubstring&v1=webcompat.com%2Cgithub.com%2Fwebcompat&v2=UNCONFIRMED%2CNEW%2CASSIGNED%2CREOPENED&v3=${website}&limit=0&api_key=${bugzillaKey}`
+    const apiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,creation_time,see_also,history&f1=see_also&f2=bug_status&f3=bug_file_loc&o1=anywordssubstr&o2=anywordssubstr&o3=casesubstring&v1=webcompat.com%2Cgithub.com%2Fwebcompat&v2=UNCONFIRMED%2CNEW%2CASSIGNED%2CREOPENED&v3=${website}&limit=0&api_key=${bugzillaKey}`
     const results = await fetch(apiQuery)
         .then(res => {
             if (!res.ok) {
@@ -223,22 +261,17 @@ const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) 
     const regex = /\/(\d+)$/;
     for (const bug of results.bugs) {
         const bzId = bug.id;
-        for (const {when, changes} of bug.history) {
-          const date = new Date(when);
-          if ((minDate && date < minDate) || (maxDate && date > maxDate)) {
-            continue;
-          }
-          for (const {added, field_name} of changes) {
-            if (!added || field_name !== "see_also") {
+        const seeAlsos = getSeeAlsoLinks(bug);
+        for (const [url, date] of seeAlsos.entries()) {
+            if ((minDate && date < minDate) || (maxDate && date > maxDate)) {
                 continue;
             }
-            if (added.includes("webcompat.com") ||
-                added.includes("github.com/webcompat")) {
-                    const matches = regex.exec(added);
-                    if (matches) {
-                        const githubId = matches[matches.length - 1];
-                        githubCandidates.push([githubId, bzId]);
-                    }
+            if (url.includes("webcompat.com") ||
+                url.includes("github.com/webcompat")) {
+                const matches = regex.exec(url);
+                if (matches) {
+                    const githubId = matches[matches.length - 1];
+                    githubCandidates.push([githubId, bzId]);
                 }
             }
         }
@@ -261,17 +294,21 @@ const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) 
         searchQuery += "+" + githubId;
         searchMapGhToBz.set(parseInt(githubId), bzId);
     }
-    searches.push([searchQuery, searchMapGhToBz]);
+    if (searchQuery !== baseSearchQuery) {
+      searches.push([searchQuery, searchMapGhToBz]);
+    }
 
+    const dupedGhIds = new Set();
     const dupedBzIds = new Set();
     const octokit = getOctokitInstance(githubKey);
-    for (const [query, ghToBzMap] of searches) {
-        const milestoneSearch = `https://api.github.com/search/issues?per_page=100&q=${query}`;
+    for (const [ query, ghToBzMap ] of searches) {
+        const milestoneSearch = `https://api.github.com/search/issues?q=${query}`;
         const results = await getAllGitHubResultsFor(octokit.request, {url: milestoneSearch});
         for (const item of results) {
             const bzId = ghToBzMap.get(item.number);
             if (bzId && item.milestone.title === "duplicate") {
                 dupedBzIds.add(bzId);
+                dupedGhIds.add(item.number);
             }
         }
     }
@@ -284,7 +321,7 @@ const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) 
         param += "%2C" + id;
     }
     const bzLink = `https://bugzilla.mozilla.org/buglist.cgi?o1=anyexact&v1=${param}&f1=bug_id`;
-    return `=HYPERLINK("${bzLink}"; ${dupedBzIds.size})`;
+    return `=HYPERLINK("${bzLink}"; ${dupedGhIds.size})`;
 }
 
 module.exports = {
