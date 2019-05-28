@@ -196,10 +196,9 @@ const getWebcompat = async (website, githubKey, minDate, maxDate) => {
  * Returns the list of see-also links for a given Bugzilla bug.
  *
  * @param {*} a Bugzilla bug's metadata including its creation_time,
-              see_also, and history fields.
- * returns a Map of the bug's see-also links mapped to the date they were added.
+ *            see_also, and history fields.
+ * @returns a Map of the bug's see-also links mapped to the date they were added.
  */
-
 function getSeeAlsoLinks(bug) {
     const seeAlsos = new Map();
 
@@ -210,7 +209,7 @@ function getSeeAlsoLinks(bug) {
         }
     }
 
-    for (const {when, changes} of bug.history) {
+    for (const {when, changes} of bug.history.sort((a, b) => b.when - a.when)) {
         const date = new Date(when);
         for (const {added, removed, field_name} of changes) {
             if (field_name === "see_also") {
@@ -220,7 +219,7 @@ function getSeeAlsoLinks(bug) {
                     }
                 }
                 if (added) {
-                    for (const url of removed.split(",")) {
+                    for (const url of added.split(",")) {
                         seeAlsos.set(url.trim(), date);
                     }
                 }
@@ -299,17 +298,17 @@ const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) 
       searches.push([searchQuery, searchMapGhToBz]);
     }
 
-    let dupeCount = 0;
+    const dupedGhIds = new Set();
     const dupedBzIds = new Set();
     const octokit = getOctokitInstance(githubKey);
-    for (const [query, ghToBzMap] of searches) {
+    for (const [ query, ghToBzMap ] of searches) {
         const milestoneSearch = `https://api.github.com/search/issues?q=${query}`;
         const results = await getAllGitHubResultsFor(octokit.request, {url: milestoneSearch});
         for (const item of results) {
             const bzId = ghToBzMap.get(item.number);
             if (bzId && item.milestone.title === "duplicate") {
                 dupedBzIds.add(bzId);
-                ++dupeCount;
+                dupedGhIds.add(item.number);
             }
         }
     }
@@ -322,7 +321,7 @@ const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) 
         param += "%2C" + id;
     }
     const bzLink = `https://bugzilla.mozilla.org/buglist.cgi?o1=anyexact&v1=${param}&f1=bug_id`;
-    return `=HYPERLINK("${bzLink}"; ${dupeCount})`;
+    return `=HYPERLINK("${bzLink}"; ${dupedGhIds.size})`;
 }
 
 module.exports = {
