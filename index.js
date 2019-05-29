@@ -34,7 +34,7 @@ const main = async () => {
 
     const title = 'Top Site Compatibility Index';
     const id = await spreadsheet.createSpreadsheet(drive, title, LIST_FILE);
-    await spreadsheet.addStaticData(sheets, id, LIST_SIZE);
+    await spreadsheet.addStaticData(sheets, id, LIST_SIZE, maxDate);
     await spreadsheet.addBugData(sheets, id, bugTable);
     // TODO add a graph
     for (const writer of writers) {
