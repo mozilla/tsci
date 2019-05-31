@@ -40,9 +40,15 @@ const main = async () => {
             }
         } else if (inputDate.indexOf("-") === inputDate.lastIndexOf("-")) {
             // An entire month is specified.
-            for (let i = 0; i < 4; i++) {
+            const month = getEOW(parsed).getMonth();
+            for (let i = 0; i < 5; i++) {
                 queryDates.push(getEOW(parsed));
                 parsed.setDate(parsed.getDate() + 7);
+                if (getEOW(parsed).getMonth() !== month) {
+                    // Stop if the fifth consecutive Sunday falls into the next
+                    // month.
+                    break;
+                }
             }
         } else {
             queryDates.push(getEOW(parsed));
