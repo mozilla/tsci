@@ -25,7 +25,8 @@
     "@octokit/plugin-throttling": "^2.6.0",
     "@octokit/rest": "^16.26.0",
     "googleapis": "^38.0.0",
-    "node-fetch": "^2.5.0"
+    "node-fetch": "^2.5.0",
+    "promise-fn-retry": "^1.0.9"
   },
   "devDependencies": {
     "eslint": "^5.16.0",

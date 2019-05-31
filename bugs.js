@@ -2,6 +2,7 @@ const fs = require('fs');
 const readline = require('readline');
 const util = require('util')
 const fetch = require('node-fetch');
+const retry = require('promise-fn-retry');
 const Octokit = require('@octokit/rest')
     .plugin(require('@octokit/plugin-throttling'))
     .plugin(require('@octokit/plugin-retry'));
@@ -61,7 +62,16 @@ const getBugzilla = async (website, bugzillaKey, minDate, maxDate) => {
     const maxDateQueryFragment = maxDate ? `&f4=creation_ts&o4=lessthaneq&v4=${formatDateForAPIQueries(maxDate)}` : "";
     const query = `https://bugzilla.mozilla.org/buglist.cgi?f1=OP&bug_file_loc_type=allwordssubstr&o3=greaterthaneq&list_id=14636479&v3=${minDateQuery}&resolution=---&bug_file_loc=${website}&query_format=advanced&f3=creation_ts&bug_status=UNCONFIRMED&bug_status=NEW&bug_status=ASSIGNED&bug_status=REOPENED&product=Core&product=Fenix&product=Firefox%20for%20Android&product=Firefox%20for%20Echo%20Show&product=Firefox%20for%20FireTV&product=Firefox%20for%20iOS&product=GeckoView&product=Web%20Compatibility&keywords_type=nowords&keywords=meta%2C%20&status_whiteboard_type=notregexp&status_whiteboard=sci%5C-exclude${maxDateQueryFragment}`;
     const apiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status&bug_file_loc=${website}&bug_file_loc_type=allwordssubstr&bug_status=UNCONFIRMED&bug_status=NEW&bug_status=ASSIGNED&bug_status=REOPENED&f1=OP&f3=creation_ts&keywords=meta%2C%20&keywords_type=nowords&o3=greaterthaneq&product=Core&product=Fenix&product=Firefox%20for%20Android&product=Firefox%20for%20Echo%20Show&product=Firefox%20for%20FireTV&product=Firefox%20for%20iOS&product=GeckoView&product=Web%20Compatibility&resolution=---&status_whiteboard=sci%5C-exclude&status_whiteboard_type=notregexp&v3=${minDateQuery}&api_key=${bugzillaKey}${maxDateQueryFragment}`;
-    const results = await fetch(apiQuery)
+    const promiseFn = () => fetch(apiQuery);
+    const options = {
+        times: 3,
+        // 10 seconds should hopefully be enough for transient errors.
+        initialDelay: 10000,
+        onRetry: (error) => {
+            console.warn(`Retrying buzgilla query ${apiQuery} due to ${error.message}!`)
+        },
+    };
+    const results = await retry(promiseFn, options)
         .then(res => {
             if (!res.ok) {
                 console.log(util.inspect(res, { showHidden: false, depth: null }))
@@ -224,7 +234,16 @@ function getSeeAlsoLinks(bug) {
  */
 const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) => {
     const apiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,creation_time,see_also,history&f1=see_also&f2=bug_status&f3=bug_file_loc&o1=anywordssubstr&o2=anywordssubstr&o3=casesubstring&v1=webcompat.com%2Cgithub.com%2Fwebcompat&v2=UNCONFIRMED%2CNEW%2CASSIGNED%2CREOPENED&v3=${website}&limit=0&api_key=${bugzillaKey}`
-    const results = await fetch(apiQuery)
+    const promiseFn = () => fetch(apiQuery);
+    const options = {
+        times: 3,
+        // 10 seconds should hopefully be enough for transient errors.
+        initialDelay: 10000,
+        onRetry: (error) => {
+            console.warn(`Retrying buzgilla query ${apiQuery} due to ${error.message}!`)
+        },
+    };
+    const results = await retry(promiseFn, options)
         .then(res => {
             if (!res.ok) {
                 console.log(util.inspect(res, { showHidden: false, depth: null }))
