@@ -23,7 +23,7 @@ const fetchList = async (size = 500, directory = "data/", date) => {
         .then(res => {
             if (!res.ok ||
                 res.headers.get('content-type') !== 'text/plain; charset=utf-8') {
-                throw new Error("Latest list ID not found!");
+                throw new Error(`Request for ${ID_URL} returned status ${res.status}!`);
             }
             return res.text();
         });
