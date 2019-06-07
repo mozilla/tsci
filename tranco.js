@@ -1,7 +1,10 @@
+const config = require('./config.json');
 const fs = require('fs');
 const fetch = require('node-fetch');
 
 const fetchList = async (size = 500, directory = "data/", date) => {
+    const ignoredDomains = config.ignoredDomains || [];
+    const listSize = size + ignoredDomains.length;
     const LATEST_LIST_URL = 'https://tranco-list.eu/top-1m-id';
 
     // Create the data directory.
@@ -39,7 +42,7 @@ const fetchList = async (size = 500, directory = "data/", date) => {
     }
 
     // Fetch the list.
-    const LIST_URL = `https://tranco-list.eu/download/${LIST_ID}/${size}`;
+    const LIST_URL = `https://tranco-list.eu/download/${LIST_ID}/${listSize}`;
     await fetch(LIST_URL)
         .then(res => {
             if (!res.ok ||
