@@ -80,6 +80,7 @@ const main = async () => {
         // TODO add a graph
         for (const writer of writers) {
             await spreadsheet.shareSheet(drive, id, writer);
+            console.log(`► https://docs.google.com/spreadsheets/d/${id}/edit`)
         }
     }
 }
