@@ -3,6 +3,7 @@
   "listDir": "data/",
   "bugzillaKey": "",
   "githubKey": "",
+  "ignoredDomains": [],
   "maxDate": null,
   "writers": [
     "user@example.com"
