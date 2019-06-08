@@ -1,11 +1,11 @@
+const fetch = require('node-fetch');
 const fs = require('fs');
 const readline = require('readline');
-const util = require('util')
-const fetch = require('node-fetch');
 const retry = require('promise-fn-retry');
 const Octokit = require('@octokit/rest')
     .plugin(require('@octokit/plugin-throttling'))
     .plugin(require('@octokit/plugin-retry'));
+const util = require('util')
 
 /**
  * Fetch bugs and webcompat.com reports.
