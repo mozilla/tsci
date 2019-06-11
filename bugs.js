@@ -1,11 +1,14 @@
+const config = require('./config.json');
+const escapeStringRegexp = require('escape-string-regexp');
+const fetch = require('node-fetch');
 const fs = require('fs');
 const readline = require('readline');
-const util = require('util')
-const fetch = require('node-fetch');
+const replace = require('replace-in-file');
 const retry = require('promise-fn-retry');
 const Octokit = require('@octokit/rest')
     .plugin(require('@octokit/plugin-throttling'))
     .plugin(require('@octokit/plugin-retry'));
+const util = require('util')
 
 /**
  * Fetch bugs and webcompat.com reports.
@@ -15,6 +18,9 @@ const Octokit = require('@octokit/rest')
  *          column data
  */
 const fetchBugs = async (listFile = 'data/list.csv', bugzillaKey, githubKey, minDate, maxDate) => {
+    // These are domains we want to ignore. See https://github.com/past/tsci/issues/35
+    const ignoredDomains = config.ignoredDomains || [];
+    const ignoredDomainsCount = ignoredDomains.length;
     const bugzilla = [];
     const webcompat = [];
     const criticals = [];
@@ -25,6 +31,26 @@ const fetchBugs = async (listFile = 'data/list.csv', bugzillaKey, githubKey, min
     bugTable.set("webcompat", webcompat);
     bugTable.set("criticals", criticals);
     bugTable.set("duplicates", duplicates);
+
+    // Modify the website list, if we have any ignoredDomains.
+    if (ignoredDomainsCount) {
+        ignoredDomains.forEach((value, index) => {
+            // create an escaped regexp out of each domain we want to ignore
+            // the CSV format will look like the following:
+            // 1,example.com\r\n
+            ignoredDomains[index] = new RegExp(`\\d{1,3},${escapeStringRegexp(value)}\\r\\n`);
+        });
+        console.log(`Skipping domains per config.ignoredDomains`);
+        const results = await replace({
+            files: listFile,
+            from: ignoredDomains,
+            to: ''
+        });
+
+        if (!results.hasChanged) {
+            console.warn('Warning: config.ignoredDomains set, but the list was not modified.');
+        }
+    }
 
     // Load the website list.
     const fileStream = fs.createReadStream(listFile);

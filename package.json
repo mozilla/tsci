@@ -24,9 +24,11 @@
     "@octokit/plugin-retry": "^2.2.0",
     "@octokit/plugin-throttling": "^2.6.0",
     "@octokit/rest": "^16.26.0",
+    "escape-string-regexp": "^2.0.0",
     "googleapis": "^38.0.0",
     "node-fetch": "^2.5.0",
-    "promise-fn-retry": "^1.0.9"
+    "promise-fn-retry": "^1.0.9",
+    "replace-in-file": "^4.1.0"
   },
   "devDependencies": {
     "eslint": "^5.16.0",
