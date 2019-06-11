@@ -1,9 +1,9 @@
 # tsci
 
-Calculate the Top Site Compatibility Index web compat metric. 
+Calculate the Top Site Compatibility Index web compat metric.
 
 ## Usage
-Requires [Node](https://nodejs.org/) 8+ and a [Google Cloud Platform](https://cloud.google.com/) service account. 
+Requires [Node](https://nodejs.org/) 8+ and a [Google Cloud Platform](https://cloud.google.com/) service account.
 You need to [create](https://cloud.google.com/docs/authentication/getting-started) a service account and download
 the JSON file containing the authentication credentials. Put that file in the project workspace as `credentials.json`.
 
@@ -22,6 +22,12 @@ would look like:
   "bugzillaKey": "",
   // The GitHub API authentication key.
   "githubKey": "",
+  // A list of domains to ignore when fetching bug results.
+  "ignoredDomains": [
+    "github.com",
+    "github.io",
+    "t.co"
+  ],
   // A cutoff date for calculating the TSCI (if not a Sunday, will be rounded to the next Sunday).
   // E.g. a value of "2019-03-01" would lead to using "2019-03-03" (March 1st was a Friday).
   "maxDate": null,
