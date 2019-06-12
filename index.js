@@ -22,7 +22,7 @@ const main = async () => {
     const githubKey = config.githubKey || '';
     const writers = config.writers || ['user@example.com'];
     const queryDates = [];
-    const maxDate = config.maxDate || null;
+    const maxDate = config.maxDate || undefined;
 
     const inputDate = process.argv[2] || maxDate;
     if (inputDate) {
