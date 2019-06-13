@@ -1,10 +1,46 @@
 const config = require('./config.json');
+const escapeStringRegexp = require('escape-string-regexp');
 const fs = require('fs');
 const fetch = require('node-fetch');
+const replace = require('replace-in-file');
+
+const IGNORED_DOMAINS = config.ignoredDomains || [];
+
+/**
+ * Return the list without the domains specific in config.ignoredDomains
+ * @param {String} listFile
+ * @returns a String path to the CSV file
+ */
+const removeIgnoredDomains = function (listFile) {
+    return new Promise((resolve) => {
+        // Modify the website list, if we have any ignoredDomains.
+        if (IGNORED_DOMAINS.length) {
+            IGNORED_DOMAINS.forEach((value, index) => {
+                // create an escaped regexp out of each domain we want to ignore
+                // the CSV format will look like the following:
+                // 1,example.com\r\n
+                IGNORED_DOMAINS[index] = new RegExp(`\\d{1,3},${escapeStringRegexp(value)}\\r\\n`);
+            });
+            console.log(`Skipping domains per config.ignoredDomains`);
+            replace({
+                countMatches: true,
+                files: listFile,
+                from: IGNORED_DOMAINS,
+                to: ''
+            }).then(results => {
+                if (!results[0].hasChanged) {
+                    console.warn('Warning: config.ignoredDomains set, but the list was not modified.');
+                }
+                resolve(listFile);
+            });
+        } else {
+            resolve(listFile);
+        }
+    });
+};
 
 const fetchList = async (size = 500, directory = "data/", date) => {
-    const ignoredDomains = config.ignoredDomains || [];
-    const listSize = size + ignoredDomains.length;
+    const listSize = size + IGNORED_DOMAINS.length;
     const LATEST_LIST_URL = 'https://tranco-list.eu/top-1m-id';
 
     // Create the data directory.
@@ -43,22 +79,20 @@ const fetchList = async (size = 500, directory = "data/", date) => {
 
     // Fetch the list.
     const LIST_URL = `https://tranco-list.eu/download/${LIST_ID}/${listSize}`;
-    await fetch(LIST_URL)
-        .then(res => {
-            if (!res.ok ||
-                res.headers.get('content-type') !== 'text/csv; charset=utf-8') {
-                throw new Error(`List ${LIST_ID} not found!`);
-            }
-            return new Promise(resolve => {
-                const dest = fs.createWriteStream(file);
-                res.body.pipe(dest);
-                dest.on('finish', () => {
-                    console.log(`Downloaded Tranco list with ID ${LIST_ID} for date ${parseDate(date)}`);
-                    resolve();
-                });
+    return fetch(LIST_URL).then(res => {
+        if (!res.ok ||
+            res.headers.get('content-type') !== 'text/csv; charset=utf-8') {
+            throw new Error(`List ${LIST_ID} not found!`);
+        }
+        return new Promise(resolve => {
+            const dest = fs.createWriteStream(file);
+            res.body.pipe(dest);
+            dest.on('finish', () => {
+                console.log(`Downloaded Tranco list with ID ${LIST_ID} for date ${parseDate(date)}`);
+                removeIgnoredDomains(file).then((newFile) => resolve(newFile));
             });
         });
-    return file;
+    });
 }
 
 /**
