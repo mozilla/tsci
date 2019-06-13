@@ -15,6 +15,7 @@ const util = require('util')
  *          column data
  */
 const fetchBugs = async (listFile = 'data/list.csv', bugzillaKey, githubKey, minDate, maxDate) => {
+    const currentLine = ((i = 0) => () => ++i)();
     const bugzilla = [];
     const webcompat = [];
     const criticals = [];
@@ -40,7 +41,7 @@ const fetchBugs = async (listFile = 'data/list.csv', bugzillaKey, githubKey, min
         const { webcompatResult, criticalsResult } = await getWebcompat(website, githubKey, minDate, maxDate);
         webcompat.push(webcompatResult);
         criticals.push(criticalsResult);
-        console.log(`Fetched bug data for website ${website}`);
+        console.log(`Fetched bug data for site #${currentLine()}: ${website}`);
     }
     return bugTable;
 }
