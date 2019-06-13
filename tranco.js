@@ -19,7 +19,7 @@ const removeIgnoredDomains = function (listFile) {
                 // create an escaped regexp out of each domain we want to ignore
                 // the CSV format will look like the following:
                 // 1,example.com\r\n
-                IGNORED_DOMAINS[index] = new RegExp(`\\d{1,3},${escapeStringRegexp(value)}\\r\\n`);
+                IGNORED_DOMAINS[index] = new RegExp(`\\d{1,3},${escapeStringRegexp(value)}\\r?\\n`);
             });
             console.log(`Skipping domains per config.ignoredDomains`);
             replace({
