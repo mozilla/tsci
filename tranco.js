@@ -5,6 +5,7 @@ const fetch = require('node-fetch');
 const replace = require('replace-in-file');
 
 const IGNORED_DOMAINS = config.ignoredDomains || [];
+let DOMAINS_REGEXP_CACHE = [];
 
 /**
  * Return the list without the domains specific in config.ignoredDomains
@@ -15,17 +16,20 @@ const removeIgnoredDomains = function (listFile) {
     return new Promise((resolve, reject) => {
         // Modify the website list, if we have any ignoredDomains.
         if (IGNORED_DOMAINS.length) {
-            IGNORED_DOMAINS.forEach((value, index) => {
-                // create an escaped regexp out of each domain we want to ignore
-                // the CSV format will look like the following:
-                // 1,example.com\r\n
-                IGNORED_DOMAINS[index] = new RegExp(`\\d{1,3},${escapeStringRegexp(value)}\\r?\\n`);
-            });
+            if (!DOMAINS_REGEXP_CACHE.length){
+                DOMAINS_REGEXP_CACHE = IGNORED_DOMAINS.map((value, index) => {
+                    // create an escaped regexp out of each domain we want to ignore
+                    // the CSV format will look like one of the following (why tho):
+                    // 1,example.com\r\n
+                    // 1,example.com\n
+                    return IGNORED_DOMAINS[index] = new RegExp(`\\d{1,3},${escapeStringRegexp(value)}\\r?\\n`);
+                });
+            }
             console.log(`Skipping domains per config.ignoredDomains`);
             replace({
                 countMatches: true,
                 files: listFile,
-                from: IGNORED_DOMAINS,
+                from: DOMAINS_REGEXP_CACHE,
                 to: ''
             }).then(results => {
                 if (!results[0].hasChanged) {
