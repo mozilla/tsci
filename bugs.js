@@ -191,14 +191,14 @@ const getWebcompat = async (website, githubKey, minDate, maxDate) => {
         date_range += `+-closed:<=${formatDateForAPIQueries(maxDate)}`;
       }
     }
-    const webcompatQuery = `https://github.com/webcompat/web-bugs/issues?q=${spaced}${date_range}+in%3Atitle+${state}+label:engine-gecko`;
-    const criticalsQuery = `https://github.com/webcompat/web-bugs/issues?q=${spaced}${date_range}+in%3Atitle+${state}+label%3Aseverity-critical+label:engine-gecko`;
+    const webcompatQuery = `https://github.com/webcompat/web-bugs/issues?q=${spaced}${date_range}+in%3Atitle+${state}+label:engine-gecko+-milestone:needstriage`;
+    const criticalsQuery = `https://github.com/webcompat/web-bugs/issues?q=${spaced}${date_range}+in%3Atitle+${state}+label%3Aseverity-critical+label:engine-gecko+-milestone:needstriage`;
     const octokit = getOctokitInstance(githubKey);
     const results = await getAllGitHubResultsFor(octokit.search.issuesAndPullRequests, {
-        q: `${spaced}${date_range}+in:title+repo:webcompat/web-bugs${state}+label:engine-gecko`,
+        q: `${spaced}${date_range}+in:title+repo:webcompat/web-bugs${state}+label:engine-gecko+-milestone:needstriage`,
     });
     const criticals = await getAllGitHubResultsFor(await octokit.search.issuesAndPullRequests, {
-        q: `${spaced}${date_range}+in:title+repo:webcompat/web-bugs${state}+label:engine-gecko+label:severity-critical`,
+        q: `${spaced}${date_range}+in:title+repo:webcompat/web-bugs${state}+label:engine-gecko+label:severity-critical+-milestone:needstriage`,
     });
     return {
         webcompatResult: `=HYPERLINK("${webcompatQuery}"; ${results.length})`,
