@@ -1,9 +1,6 @@
-const config = require('./config.json');
-const escapeStringRegexp = require('escape-string-regexp');
 const fetch = require('node-fetch');
 const fs = require('fs');
 const readline = require('readline');
-const replace = require('replace-in-file');
 const retry = require('promise-fn-retry');
 const Octokit = require('@octokit/rest')
     .plugin(require('@octokit/plugin-throttling'))
@@ -18,9 +15,7 @@ const util = require('util')
  *          column data
  */
 const fetchBugs = async (listFile = 'data/list.csv', bugzillaKey, githubKey, minDate, maxDate) => {
-    // These are domains we want to ignore. See https://github.com/past/tsci/issues/35
-    const ignoredDomains = config.ignoredDomains || [];
-    const ignoredDomainsCount = ignoredDomains.length;
+    const currentLine = ((i = 0) => () => ++i)();
     const bugzilla = [];
     const webcompat = [];
     const criticals = [];
@@ -31,26 +26,6 @@ const fetchBugs = async (listFile = 'data/list.csv', bugzillaKey, githubKey, min
     bugTable.set("webcompat", webcompat);
     bugTable.set("criticals", criticals);
     bugTable.set("duplicates", duplicates);
-
-    // Modify the website list, if we have any ignoredDomains.
-    if (ignoredDomainsCount) {
-        ignoredDomains.forEach((value, index) => {
-            // create an escaped regexp out of each domain we want to ignore
-            // the CSV format will look like the following:
-            // 1,example.com\r\n
-            ignoredDomains[index] = new RegExp(`\\d{1,3},${escapeStringRegexp(value)}\\r\\n`);
-        });
-        console.log(`Skipping domains per config.ignoredDomains`);
-        const results = await replace({
-            files: listFile,
-            from: ignoredDomains,
-            to: ''
-        });
-
-        if (!results.hasChanged) {
-            console.warn('Warning: config.ignoredDomains set, but the list was not modified.');
-        }
-    }
 
     // Load the website list.
     const fileStream = fs.createReadStream(listFile);
@@ -66,7 +41,7 @@ const fetchBugs = async (listFile = 'data/list.csv', bugzillaKey, githubKey, min
         const { webcompatResult, criticalsResult } = await getWebcompat(website, githubKey, minDate, maxDate);
         webcompat.push(webcompatResult);
         criticals.push(criticalsResult);
-        console.log(`Fetched bug data for website ${website}`);
+        console.log(`Fetched bug data for site #${currentLine()}: ${website}`);
     }
     return bugTable;
 }
@@ -216,14 +191,14 @@ const getWebcompat = async (website, githubKey, minDate, maxDate) => {
         date_range += `+-closed:<=${formatDateForAPIQueries(maxDate)}`;
       }
     }
-    const webcompatQuery = `https://github.com/webcompat/web-bugs/issues?q=${spaced}${date_range}+in%3Atitle+${state}+label:engine-gecko`;
-    const criticalsQuery = `https://github.com/webcompat/web-bugs/issues?q=${spaced}${date_range}+in%3Atitle+${state}+label%3Aseverity-critical+label:engine-gecko`;
+    const webcompatQuery = `https://github.com/webcompat/web-bugs/issues?q=${spaced}${date_range}+in%3Atitle+${state}+label:engine-gecko+-milestone:needstriage`;
+    const criticalsQuery = `https://github.com/webcompat/web-bugs/issues?q=${spaced}${date_range}+in%3Atitle+${state}+label%3Aseverity-critical+label:engine-gecko+-milestone:needstriage`;
     const octokit = getOctokitInstance(githubKey);
     const results = await getAllGitHubResultsFor(octokit.search.issuesAndPullRequests, {
-        q: `${spaced}${date_range}+in:title+repo:webcompat/web-bugs${state}+label:engine-gecko`,
+        q: `${spaced}${date_range}+in:title+repo:webcompat/web-bugs${state}+label:engine-gecko+-milestone:needstriage`,
     });
     const criticals = await getAllGitHubResultsFor(await octokit.search.issuesAndPullRequests, {
-        q: `${spaced}${date_range}+in:title+repo:webcompat/web-bugs${state}+label:engine-gecko+label:severity-critical`,
+        q: `${spaced}${date_range}+in:title+repo:webcompat/web-bugs${state}+label:engine-gecko+label:severity-critical+-milestone:needstriage`,
     });
     return {
         webcompatResult: `=HYPERLINK("${webcompatQuery}"; ${results.length})`,
