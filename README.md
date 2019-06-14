@@ -51,3 +51,10 @@ and including Saturday May 25 2018:
 ```
 npm start 2019-05-23
 ```
+
+Code of Conduct
+===============
+
+This project and repository is governed by Mozilla's code of conduct and
+etiquette guidelines. For more details please see the `CODE_OF_CONDUCT.md
+file.
