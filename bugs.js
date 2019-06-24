@@ -63,6 +63,21 @@ function formatWebSiteForRegExp(website) {
 }
 
 /**
+ * Returns a URL encoded string containing the Buzilla products (as GET params)
+ */
+function getBugzillaProducts() {
+    const products = [
+        "Core",
+        "Fenix",
+        "Firefox",
+        "Firefox for Android",
+        "GeckoView",
+        "Web Compatibility"
+    ];
+    return `&product=${products.map(i => encodeURIComponent(i)).join("&product=")}`;
+}
+
+/**
  * Returns Bugzilla bugs created after minDate if specified, 2018-01-01 otherwise.
  * @param {String} website
  * @param {String} bugzillaKey
@@ -73,10 +88,10 @@ const getBugzilla = async (website, bugzillaKey, minDate, maxDate = new Date()) 
     const minDateQuery = minDate ? formatDateForAPIQueries(minDate) : "2018";
     const maxDateQuery = formatDateForAPIQueries(maxDate);
     const maxDateQueryFragment = `&f4=creation_ts&o4=lessthaneq&v4=${formatDateForAPIQueries(maxDate)}`;
-    const openQuery = `https://bugzilla.mozilla.org/buglist.cgi?priority=P1&priority=P2&priority=P3&f1=OP&bug_file_loc_type=regexp&o3=greaterthaneq&list_id=14636479&v3=${minDateQuery}&resolution=---&bug_file_loc=${formatWebSiteForRegExp(website)}&query_format=advanced&f3=creation_ts&bug_status=UNCONFIRMED&bug_status=NEW&bug_status=ASSIGNED&bug_status=REOPENED&product=Core&product=Fenix&product=Firefox%20for%20Android&product=Firefox%20for%20Echo%20Show&product=Firefox%20for%20FireTV&product=Firefox%20for%20iOS&product=GeckoView&product=Web%20Compatibility&keywords_type=nowords&keywords=meta%2C%20&status_whiteboard_type=notregexp&status_whiteboard=sci%5C-exclude${maxDateQueryFragment}`;
+    const openQuery = `https://bugzilla.mozilla.org/buglist.cgi?priority=P1&priority=P2&priority=P3&f1=OP&bug_file_loc_type=regexp&o3=greaterthaneq&list_id=14636479&v3=${minDateQuery}&resolution=---&bug_file_loc=${formatWebSiteForRegExp(website)}&query_format=advanced&f3=creation_ts&bug_status=UNCONFIRMED&bug_status=NEW&bug_status=ASSIGNED&bug_status=REOPENED${getBugzillaProducts()}&keywords_type=nowords&keywords=meta%2C%20&status_whiteboard_type=notregexp&status_whiteboard=sci%5C-exclude${maxDateQueryFragment}`;
     // const resolvedQuery = `https://bugzilla.mozilla.org/buglist.cgi?priority=P1&priority=P2&priority=P3&keywords=meta%2C%20&keywords_type=nowords&list_id=14745792&status_whiteboard_type=notregexp&bug_file_loc=google.com&chfield=bug_status&chfieldfrom=${maxDateQuery}&o4=lessthaneq&chfieldvalue=RESOLVED&status_whiteboard=sci%5C-exclude&v4=${maxDateQuery}&f1=OP&o3=greaterthaneq&bug_file_loc_type=regexp&v3=${minDateQuery}&f4=creation_ts&query_format=advanced&f3=creation_ts&product=Core&product=Fenix&product=Firefox%20for%20Android&product=Firefox%20for%20Echo%20Show&product=Firefox%20for%20FireTV&product=Firefox%20for%20iOS&product=GeckoView&product=Web%20Compatibility`;
-    const openApiQuery =     `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status,priority&priority=P1&priority=P2&priority=P3&bug_file_loc=${formatWebSiteForRegExp(website)}&bug_file_loc_type=regexp&bug_status=UNCONFIRMED&bug_status=NEW&bug_status=ASSIGNED&bug_status=REOPENED&f1=OP&f3=creation_ts&keywords=meta%2C%20&keywords_type=nowords&o3=greaterthaneq&product=Core&product=Fenix&product=Firefox%20for%20Android&product=Firefox%20for%20Echo%20Show&product=Firefox%20for%20FireTV&product=Firefox%20for%20iOS&product=GeckoView&product=Web%20Compatibility&resolution=---&status_whiteboard=sci%5C-exclude&status_whiteboard_type=notregexp&v3=${minDateQuery}&api_key=${bugzillaKey}${maxDateQueryFragment}`;
-    const resolvedApiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status,priority&priority=P1&priority=P2&priority=P3&bug_file_loc=${formatWebSiteForRegExp(website)}&bug_file_loc_type=regexp&chfield=bug_status&chfieldfrom=${maxDateQuery}&chfieldvalue=RESOLVED&f1=OP&f3=creation_ts&f4=creation_ts&keywords=meta%2C%20&keywords_type=nowords&o3=greaterthaneq&o4=lessthaneq&product=Core&product=Fenix&product=Firefox%20for%20Android&product=Firefox%20for%20Echo%20Show&product=Firefox%20for%20FireTV&product=Firefox%20for%20iOS&product=GeckoView&product=Web%20Compatibility&status_whiteboard=sci%5C-exclude&status_whiteboard_type=notregexp&v3=${minDateQuery}&v4=${maxDateQuery}&api_key=${bugzillaKey}`;
+    const openApiQuery =     `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status,priority&priority=P1&priority=P2&priority=P3&bug_file_loc=${formatWebSiteForRegExp(website)}&bug_file_loc_type=regexp&bug_status=UNCONFIRMED&bug_status=NEW&bug_status=ASSIGNED&bug_status=REOPENED&f1=OP&f3=creation_ts&keywords=meta%2C%20&keywords_type=nowords&o3=greaterthaneq${getBugzillaProducts()}&resolution=---&status_whiteboard=sci%5C-exclude&status_whiteboard_type=notregexp&v3=${minDateQuery}&api_key=${bugzillaKey}${maxDateQueryFragment}`;
+    const resolvedApiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status,priority&priority=P1&priority=P2&priority=P3&bug_file_loc=${formatWebSiteForRegExp(website)}&bug_file_loc_type=regexp&chfield=bug_status&chfieldfrom=${maxDateQuery}&chfieldvalue=RESOLVED&f1=OP&f3=creation_ts&f4=creation_ts&keywords=meta%2C%20&keywords_type=nowords&o3=greaterthaneq&o4=lessthaneq${getBugzillaProducts()}&status_whiteboard=sci%5C-exclude&status_whiteboard_type=notregexp&v3=${minDateQuery}&v4=${maxDateQuery}&api_key=${bugzillaKey}`;
     const openResults = await bugzillaRetry(openApiQuery);
     const resolvedResults = await bugzillaRetry(resolvedApiQuery);
     const results = openResults.bugs.concat(resolvedResults.bugs);
