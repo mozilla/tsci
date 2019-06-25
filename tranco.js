@@ -43,9 +43,46 @@ const removeIgnoredDomains = function (listFile) {
     });
 };
 
+/**
+ * Returns the list ID for the specified date or, if that cannot be found, the
+ * most recent one available. If a date is not specified, returns the latest
+ * available list.
+ * @param {Date} date the date of the requested list ID
+ * @returns the String of the list ID
+ */
+const fetchListID = async (date) => {
+    const LATEST_LIST_URL = 'https://tranco-list.eu/top-1m-id';
+    let ID_URL = LATEST_LIST_URL;
+    if (date) {
+        ID_URL = `https://tranco-list.eu/daily_list_id?date=${parseDate(date)}`;
+    } else {
+        date = new Date();
+    }
+    return fetch(ID_URL)
+        .then(res => {
+            if (res.ok &&
+                res.headers.get('content-type') === 'text/plain; charset=utf-8') {
+                return res.text();
+            }
+            else if (res.status === 503) {
+                const newDate = new Date(date);
+                // Future dates are unlikely to be available yet, but also ones
+                // from long ago may have never been available. Try to converge
+                // towards the present.
+                if (date > new Date()) {
+                    newDate.setDate(newDate.getDate() - 1);
+                } else {
+                    newDate.setDate(newDate.getDate() + 1);
+                }
+                console.warn(`Retrying with date ${newDate}`);
+                return fetchListID(newDate);
+            }
+            throw new Error(`Request for ${ID_URL} returned status ${res.status}!`);
+        });
+};
+
 const fetchList = async (size = 500, directory = "data/", date) => {
     const listSize = size + IGNORED_DOMAINS.length;
-    const LATEST_LIST_URL = 'https://tranco-list.eu/top-1m-id';
 
     // Create the data directory.
     await new Promise((resolve, reject) => {
@@ -55,21 +92,11 @@ const fetchList = async (size = 500, directory = "data/", date) => {
         });
     });
 
-    // Fetch the requested list ID.
-    let ID_URL = LATEST_LIST_URL;
-    if (date) {
-        ID_URL = `https://tranco-list.eu/daily_list_id?date=${parseDate(date)}`;
-    } else {
+    // Fetch the list ID for the requested date.
+    const LIST_ID = await fetchListID(date);
+    if (!date) {
         date = new Date();
     }
-    const LIST_ID = await fetch(ID_URL)
-        .then(res => {
-            if (!res.ok ||
-                res.headers.get('content-type') !== 'text/plain; charset=utf-8') {
-                throw new Error(`Request for ${ID_URL} returned status ${res.status}!`);
-            }
-            return res.text();
-        });
     const file = `${directory}list-${parseDate(date)}.csv`;
 
     // Check for an already downloaded list.
