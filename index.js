@@ -77,7 +77,6 @@ const main = async () => {
         const id = await spreadsheet.createSpreadsheet(drive, title, LIST_FILE);
         await spreadsheet.addStaticData(sheets, id, LIST_SIZE, date);
         await spreadsheet.addBugData(sheets, id, bugTable);
-        // TODO add a graph
         for (const writer of writers) {
             await spreadsheet.shareSheet(drive, id, writer);
             console.log(`► https://docs.google.com/spreadsheets/d/${id}/edit`)

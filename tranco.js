@@ -66,7 +66,14 @@ const fetchListID = async (date) => {
             }
             else if (res.status === 503) {
                 const newDate = new Date(date);
-                newDate.setDate(newDate.getDate() + 1);
+                // Future dates are unlikely to be available yet, but also ones
+                // from long ago may have never been available. Try to converge
+                // towards the present.
+                if (date > new Date()) {
+                    newDate.setDate(newDate.getDate() - 1);
+                } else {
+                    newDate.setDate(newDate.getDate() + 1);
+                }
                 console.warn(`Retrying with date ${newDate}`);
                 return fetchListID(newDate);
             }
