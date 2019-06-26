@@ -210,6 +210,8 @@ async function getAllGitHubResultsFor(query, params = {}) {
  *     browser - firefox, browser - firefox - mobile,
  *     browser - firefox - tablet, browser - fenix,
  *     browser - focus - geckoview, browser - firefox - reality
+ * Only bugs in the needsdiagnosis, needscontact, contactready, & sitewait
+ * milestones are collected.
  * @param {*} website
  * @param {*} githubKey
  * @returns an Object with a webcompatResult and a criticalsResult properties
@@ -238,9 +240,12 @@ const getWebcompat = async (website, githubKey, minDate, maxDate) => {
     const criticals = await getAllGitHubResultsFor(await octokit.search.issuesAndPullRequests, {
         q: `${spaced}${date_range}+in:title+repo:webcompat/web-bugs${state}+label:engine-gecko+label:severity-critical+-milestone:needstriage`,
     });
+    // milestones: needsdiagnosis (3), needscontact (4), contactready (5), sitewait (6)
+    const filteredResults = results.filter(bug => [3, 4, 5, 6].includes(bug.milestone.number));
+    const filteredCriticals = criticals.filter(bug => [3, 4, 5, 6].includes(bug.milestone.number));
     return {
-        webcompatResult: `=HYPERLINK("${webcompatQuery}"; ${results.length})`,
-        criticalsResult: `=HYPERLINK("${criticalsQuery}"; ${criticals.length})`
+        webcompatResult: `=HYPERLINK("${webcompatQuery}"; ${filteredResults.length})`,
+        criticalsResult: `=HYPERLINK("${criticalsQuery}"; ${filteredCriticals.length})`
     };
 }
 
