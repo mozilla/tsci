@@ -1,33 +1,38 @@
 const fs = require('fs');
+const readline = require('readline');
 
-async function createSpreadsheet(drive, title, file) {
-    const fileMetadata = {
-        'name': title,
-        'mimeType': 'application/vnd.google-apps.spreadsheet'
-    };
-    const media = {
-        mimeType: 'text/csv',
-        body: fs.createReadStream(file)
-    };
-    const spreadsheetId = await new Promise((resolve, reject) => {
-        drive.files.create({
-            resource: fileMetadata,
-            media: media,
-            fields: 'id'
-        }, function (err, file) {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(file.data.id);
-            }
-        });
+async function createSpreadsheet(sheets, title, maxDate) {
+    const resource = {
+        properties: {
+            title,
+        }
+    }
+    const { data } = await sheets.spreadsheets.create({ resource });
+    const spreadsheetId = data.spreadsheetId;
+    const sheetId = data.sheets[0].properties.sheetId;
+    // Cosntruct the sheet title.
+    const sheetTitle = getSheetTitle(maxDate);
+    // Fix sheet name.
+    await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        resource: {
+            requests: [{
+                "updateSheetProperties": {
+                    "properties": {
+                        sheetId,
+                        title: sheetTitle,
+                    },
+                    "fields": "title"
+                },
+            }]
+        },
     });
 
     console.log(`Created new spreadsheet with ID: ${spreadsheetId}`);
     return spreadsheetId;
 }
 
-async function addBugData(sheets, spreadsheetId, bugTable) {
+async function addBugData(sheets, spreadsheetId, bugTable, title) {
     let result = await sheets.spreadsheets.get({
         spreadsheetId,
     });
@@ -36,7 +41,7 @@ async function addBugData(sheets, spreadsheetId, bugTable) {
     const bugzilla = bugTable.get("bugzilla");
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `C3:C${bugzilla.length + 2}`,
+        range: `${title}!C3:C${bugzilla.length + 2}`,
         resource: {
             values: [bugzilla],
             majorDimension: "COLUMNS",
@@ -48,7 +53,7 @@ async function addBugData(sheets, spreadsheetId, bugTable) {
     const webcompat = bugTable.get("webcompat");
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `D3:D${webcompat.length + 2}`,
+        range: `${title}!D3:D${webcompat.length + 2}`,
         resource: {
             values: [webcompat],
             majorDimension: "COLUMNS",
@@ -60,7 +65,7 @@ async function addBugData(sheets, spreadsheetId, bugTable) {
     const criticals = bugTable.get("criticals");
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `E3:E${criticals.length + 2}`,
+        range: `${title}!E3:E${criticals.length + 2}`,
         resource: {
             values: [criticals],
             majorDimension: "COLUMNS",
@@ -72,7 +77,7 @@ async function addBugData(sheets, spreadsheetId, bugTable) {
     const duplicates = bugTable.get("duplicates");
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `F3:F${duplicates.length + 2}`,
+        range: `${title}!F3:F${duplicates.length + 2}`,
         resource: {
             values: [duplicates],
             majorDimension: "COLUMNS",
@@ -82,12 +87,64 @@ async function addBugData(sheets, spreadsheetId, bugTable) {
     console.log('Updated duplicates cells: ' + result.data.updatedCells);
 }
 
-async function addStaticData(sheets, spreadsheetId, listSize, maxDate) {
+async function findOrCreateSheet(sheets, spreadsheetId, maxDate) {
     let result = await sheets.spreadsheets.get({
         spreadsheetId,
     });
-    const { properties } = result.data.sheets[0]
-    const sheetId = properties.sheetId;
+    // Cosntruct the sheet title.
+    const title = getSheetTitle(maxDate);
+
+    // Find the sheet to update...
+    let sheetId;
+    for (const sheet of result.data.sheets) {
+        const { properties } = sheet;
+        if (properties.title !== title) {
+            continue;
+        }
+        sheetId = properties.sheetId;
+        result = await sheets.spreadsheets.batchUpdate({
+            spreadsheetId,
+            resource: {
+                requests: [{
+                    "updateCells": {
+                        "range": {
+                            sheetId
+                        },
+                        "fields": "userEnteredValue"
+                    }
+                }]
+            }
+        });
+        console.log(`Found and cleared sheet with ID ${sheetId}`);
+    }
+    // ... or create a new sheet.
+    if (sheetId === undefined) {
+        result = await sheets.spreadsheets.batchUpdate({
+            spreadsheetId,
+            resource: {
+                requests: [{
+                    "addSheet": {
+                        "properties": {
+                            title
+                        }
+                    }
+                }]
+            }
+        });
+        sheetId = result.data.replies[0].addSheet.properties.sheetId;
+        console.log(`Added sheet with ID ${sheetId}`);
+    }
+    return {
+        sheetId,
+        title
+    }
+}
+
+async function addStaticData(sheets, spreadsheetId, listSize, listFile = 'data/list.csv', sheetId, title) {
+    let result = await sheets.spreadsheets.get({
+        spreadsheetId,
+    });
+
     const valueInputOption = 'USER_ENTERED';
     const requests = [];
     const range = {
@@ -100,20 +157,6 @@ async function addStaticData(sheets, spreadsheetId, listSize, maxDate) {
     const headers = ['Rank', 'Website', 'bugzilla', 'webcompat.com',
         'criticals', 'duplicates', 'critical weight', 'SCI', 'Site weight', 'Weighted SCI'];
 
-    // Fix sheet name.
-    if (!maxDate) {
-        maxDate = new Date();
-    }
-    const title = `${maxDate.getFullYear()}/${(maxDate.getMonth() + 1)}/${maxDate.getDate()}`;
-    requests.push({
-        "updateSheetProperties": {
-            "properties": {
-                "sheetId": sheetId,
-                title,
-            },
-            "fields": "title"
-        },
-    });
     // Insert totals row.
     requests.push({
         "insertRange": {
@@ -152,7 +195,7 @@ async function addStaticData(sheets, spreadsheetId, listSize, maxDate) {
     ];
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `A1:J1`,
+        range: `${title}!A1:J1`,
         resource: {
             values: [totals],
         },
@@ -162,7 +205,7 @@ async function addStaticData(sheets, spreadsheetId, listSize, maxDate) {
 
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: "A2:J2",
+        range: `${title}!A2:J2`,
         resource: {
             values: [headers],
         },
@@ -172,7 +215,7 @@ async function addStaticData(sheets, spreadsheetId, listSize, maxDate) {
 
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: "G3",
+        range: `${title}!G3`,
         resource: {
             values: [['25%']],
         },
@@ -186,7 +229,7 @@ async function addStaticData(sheets, spreadsheetId, listSize, maxDate) {
     }
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `I3:I${listSize+2}`,
+        range: `${title}!I3:I${listSize+2}`,
         resource: {
             values: [weights],
             majorDimension: "COLUMNS",
@@ -201,7 +244,7 @@ async function addStaticData(sheets, spreadsheetId, listSize, maxDate) {
     }
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `H3:H${listSize + 2}`,
+        range: `${title}!H3:H${listSize + 2}`,
         resource: {
             values: [sci],
             majorDimension: "COLUMNS",
@@ -216,14 +259,53 @@ async function addStaticData(sheets, spreadsheetId, listSize, maxDate) {
     }
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `J3:J${listSize + 2}`,
+        range: `${title}!J3:J${listSize + 2}`,
         resource: {
             values: [wsci],
             majorDimension: "COLUMNS",
         },
         valueInputOption,
-    })
+    });
     console.log('Updated weighted SCI cells: ' + result.data.updatedCells);
+
+    // Load the website list.
+    const fileStream = fs.createReadStream(listFile);
+    const rl = readline.createInterface({
+        input: fileStream,
+        crlfDelay: Infinity
+    });
+
+    const ranks = [];
+    const websites = [];
+    let i = 0;
+    for await (const line of rl) {
+        const [ rank, website ] = line.split(',');
+        ranks.push(rank);
+        websites.push(website);
+        if (++i >= listSize) {
+            break;
+        }
+    }
+    result = await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${title}!A3:A${listSize + 2}`,
+        resource: {
+            values: [ranks],
+            majorDimension: "COLUMNS",
+        },
+        valueInputOption,
+    });
+    console.log('Updated rank cells: ' + result.data.updatedCells);
+    result = await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${title}!B3:B${listSize + 2}`,
+        resource: {
+            values: [websites],
+            majorDimension: "COLUMNS",
+        },
+        valueInputOption,
+    });
+    console.log('Updated website cells: ' + result.data.updatedCells);
 }
 
 const shareSheet = async (drive, id, emailAddress) => {
@@ -245,9 +327,22 @@ const shareSheet = async (drive, id, emailAddress) => {
     }
 }
 
+/**
+ * Return the title of the sheet for the specified date.
+ * @param {Date} date the date of the sheet
+ * @returns a String with the sheet title
+ */
+function getSheetTitle(date) {
+    if (!date) {
+        date = new Date();
+    }
+    return `${date.getFullYear()}/${(date.getMonth() + 1)}/${date.getDate()}`;
+}
+
 module.exports = {
     addBugData,
     addStaticData,
     createSpreadsheet,
+    findOrCreateSheet,
     shareSheet,
 }
