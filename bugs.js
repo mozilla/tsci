@@ -241,8 +241,12 @@ const getWebcompat = async (website, githubKey, minDate, maxDate) => {
         q: `${spaced}${date_range}+in:title+repo:webcompat/web-bugs${state}+label:engine-gecko+label:severity-critical+-milestone:needstriage`,
     });
     // milestones: needsdiagnosis (3), needscontact (4), contactready (5), sitewait (6)
-    const filteredResults = results.filter(bug => [3, 4, 5, 6].includes(bug.milestone.number));
-    const filteredCriticals = criticals.filter(bug => [3, 4, 5, 6].includes(bug.milestone.number));
+    const filteredResults = results.filter(bug => [3, 4, 5, 6].includes(bug.milestone.number))
+        // filter out any bugs with an sci-exclude label
+        .filter(bug => bug.labels.every(label => label.name !== "sci-exclude"));
+    const filteredCriticals = criticals.filter(bug => [3, 4, 5, 6].includes(bug.milestone.number))
+        // filter out any bugs with an sci-exclude label
+        .filter(bug => bug.labels.every(label => label.name !== "sci-exclude"));
     return {
         webcompatResult: `=HYPERLINK("${webcompatQuery}"; ${filteredResults.length})`,
         criticalsResult: `=HYPERLINK("${criticalsQuery}"; ${filteredCriticals.length})`
