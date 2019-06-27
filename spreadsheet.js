@@ -10,7 +10,7 @@ async function createSpreadsheet(sheets, title, maxDate) {
     const { data } = await sheets.spreadsheets.create({ resource });
     const spreadsheetId = data.spreadsheetId;
     const sheetId = data.sheets[0].properties.sheetId;
-    // Cosntruct the sheet title.
+    // Construct the sheet title.
     const sheetTitle = getSheetTitle(maxDate);
     // Fix sheet name.
     await sheets.spreadsheets.batchUpdate({
@@ -91,7 +91,7 @@ async function findOrCreateSheet(sheets, spreadsheetId, maxDate) {
     let result = await sheets.spreadsheets.get({
         spreadsheetId,
     });
-    // Cosntruct the sheet title.
+    // Construct the sheet title.
     const title = getSheetTitle(maxDate);
 
     // Find the sheet to update...
