@@ -7,10 +7,7 @@ module.exports = {
     'eslint:recommended',
   ],
   parserOptions: {
-    ecmaVersion: '2017',
-    ecmaFeatures: {
-      experimentalObjectRestSpread: true,
-    },
+    ecmaVersion: 9,
     sourceType: 'module',
   },
   plugins: ['import'],
