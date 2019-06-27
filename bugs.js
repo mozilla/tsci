@@ -7,6 +7,8 @@ const Octokit = require('@octokit/rest')
     .plugin(require('@octokit/plugin-retry'));
 const util = require('util')
 
+const searchConstraintQueryFragment = `&keywords_type=nowords&keywords=meta%2C%20&status_whiteboard_type=notregexp&status_whiteboard=sci%5C-exclude`;
+
 /**
  * Fetch bugs and webcompat.com reports.
  * @param {*} listFile
@@ -113,10 +115,10 @@ const getBugzilla = async (website, bugzillaKey, minDate, maxDate = new Date()) 
     const minDateQuery = minDate ? formatDateForAPIQueries(minDate) : "2018";
     const maxDateQuery = formatDateForAPIQueries(maxDate);
     const maxDateQueryFragment = `&f4=creation_ts&o4=lessthaneq&v4=${formatDateForAPIQueries(maxDate)}`;
-    const openQuery = `https://bugzilla.mozilla.org/buglist.cgi?f1=OP${getBugzillaPriorities()}&bug_file_loc_type=regexp&o3=greaterthaneq&list_id=14636479&v3=${minDateQuery}&resolution=---&bug_file_loc=${formatWebSiteForRegExp(website)}&query_format=advanced&f3=creation_ts${getBugzillaStatuses()}${getBugzillaProducts()}&keywords_type=nowords&keywords=meta%2C%20&status_whiteboard_type=notregexp&status_whiteboard=sci%5C-exclude${maxDateQueryFragment}`;
+    const openQuery = `https://bugzilla.mozilla.org/buglist.cgi?f1=OP${getBugzillaPriorities()}&bug_file_loc_type=regexp&o3=greaterthaneq&list_id=14636479&v3=${minDateQuery}&resolution=---&bug_file_loc=${formatWebSiteForRegExp(website)}&query_format=advanced&f3=creation_ts${getBugzillaStatuses()}${getBugzillaProducts()}${maxDateQueryFragment}${searchConstraintQueryFragment}`;
     // const resolvedQuery = `https://bugzilla.mozilla.org/buglist.cgi?keywords=meta%2C%20&keywords_type=nowords${getBugzillaPriorities()}&list_id=14745792&status_whiteboard_type=notregexp&bug_file_loc=${formatWebSiteForRegExp(website)}&chfield=bug_status&chfieldfrom=${maxDateQuery}&o4=lessthaneq&chfieldvalue=RESOLVED&status_whiteboard=sci%5C-exclude&v4=${maxDateQuery}&f1=OP&o3=greaterthaneq&bug_file_loc_type=regexp&v3=${minDateQuery}&f4=creation_ts&query_format=advanced&f3=creation_ts${getBugzillaProducts()}`;
-    const openApiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status,priority${getBugzillaPriorities()}&bug_file_loc=${formatWebSiteForRegExp(website)}&bug_file_loc_type=regexp${getBugzillaStatuses()}&f1=OP&f3=creation_ts&keywords=meta%2C%20&keywords_type=nowords&o3=greaterthaneq${getBugzillaProducts()}&resolution=---&status_whiteboard=sci%5C-exclude&status_whiteboard_type=notregexp&v3=${minDateQuery}&api_key=${bugzillaKey}${maxDateQueryFragment}`;
-    const resolvedApiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status,priority${getBugzillaPriorities()}&bug_file_loc=${formatWebSiteForRegExp(website)}&bug_file_loc_type=regexp&chfield=bug_status&chfieldfrom=${maxDateQuery}&chfieldvalue=RESOLVED&f1=OP&f3=creation_ts&f4=creation_ts&keywords=meta%2C%20&keywords_type=nowords&o3=greaterthaneq&o4=lessthaneq${getBugzillaProducts()}&status_whiteboard=sci%5C-exclude&status_whiteboard_type=notregexp&v3=${minDateQuery}&v4=${maxDateQuery}&api_key=${bugzillaKey}`;
+    const openApiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status,priority${getBugzillaPriorities()}&bug_file_loc=${formatWebSiteForRegExp(website)}&bug_file_loc_type=regexp${getBugzillaStatuses()}&f1=OP&f3=creation_ts&o3=greaterthaneq${getBugzillaProducts()}&resolution=---&v3=${minDateQuery}&api_key=${bugzillaKey}${maxDateQueryFragment}${searchConstraintQueryFragment}`;
+    const resolvedApiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status,priority${getBugzillaPriorities()}&bug_file_loc=${formatWebSiteForRegExp(website)}&bug_file_loc_type=regexp&chfield=bug_status&chfieldfrom=${maxDateQuery}&chfieldvalue=RESOLVED&f1=OP&f3=creation_ts&f4=creation_ts&o3=greaterthaneq&o4=lessthaneq${getBugzillaProducts()}&v3=${minDateQuery}&v4=${maxDateQuery}&api_key=${bugzillaKey}${searchConstraintQueryFragment}`;
     const openResults = await bugzillaRetry(openApiQuery);
     const resolvedResults = await bugzillaRetry(resolvedApiQuery);
     const results = openResults.bugs.concat(resolvedResults.bugs);
@@ -308,7 +310,7 @@ function getSeeAlsoLinks(bug) {
  * @param {*} githubKey
  */
 const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) => {
-    const apiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,creation_time,see_also,history,priority&priority=P1&priority=P2&priority=P3&f1=see_also&f2=bug_status&f3=bug_file_loc&o1=anywordssubstr&o2=anywordssubstr&o3=regexp&v1=webcompat.com%2Cgithub.com%2Fwebcompat&v2=UNCONFIRMED%2CNEW%2CASSIGNED%2CREOPENED&v3=${formatWebSiteForRegExp(website)}&limit=0&api_key=${bugzillaKey}`
+    const apiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,creation_time,see_also,history,priority${getBugzillaPriorities()}&f1=see_also&f2=bug_status&f3=bug_file_loc&o1=anywordssubstr&o2=anywordssubstr&o3=regexp&v1=webcompat.com%2Cgithub.com%2Fwebcompat&v2=UNCONFIRMED%2CNEW%2CASSIGNED%2CREOPENED&v3=${formatWebSiteForRegExp(website)}&limit=0&api_key=${bugzillaKey}${searchConstraintQueryFragment}`
     const promiseFn = () => fetch(apiQuery);
     const options = {
         times: 3,
