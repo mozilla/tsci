@@ -23,6 +23,7 @@ const main = async () => {
     const writers = config.writers || ['user@example.com'];
     const queryDates = [];
     const maxDate = config.maxDate || undefined;
+    let id = config.spreadsheetId;
 
     const inputDate = process.argv[2] || maxDate;
     if (inputDate) {
@@ -73,10 +74,13 @@ const main = async () => {
         const sheets = google.sheets({ version: 'v4', auth });
         const drive = google.drive({ version: 'v3', auth })
 
-        const title = 'Top Site Compatibility Index';
-        const id = await spreadsheet.createSpreadsheet(drive, title, LIST_FILE);
-        await spreadsheet.addStaticData(sheets, id, LIST_SIZE, date);
-        await spreadsheet.addBugData(sheets, id, bugTable);
+        const docTitle = 'Top Site Compatibility Index';
+        if (!id) {
+            id = await spreadsheet.createSpreadsheet(sheets, docTitle, date);
+        }
+        const { sheetId, title } = await spreadsheet.findOrCreateSheet(sheets, id, date);
+        await spreadsheet.addStaticData(sheets, id, LIST_SIZE, LIST_FILE, sheetId, title);
+        await spreadsheet.addBugData(sheets, id, bugTable, title);
         for (const writer of writers) {
             await spreadsheet.shareSheet(drive, id, writer);
             console.log(`► https://docs.google.com/spreadsheets/d/${id}/edit`)
