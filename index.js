@@ -67,10 +67,7 @@ const main = async () => {
     for (const date of queryDates) {
         const LIST_FILE = await tranco.fetchList(LIST_SIZE, LIST_DIR, date);
         const bugTable = await bugs.fetchBugs(LIST_FILE, bugzillaKey, githubKey, parsedMinDate, date);
-        if (bugTable.get("bugzilla").length + bugTable.get("bugzillaMobile").length +
-            bugTable.get("webcompat").length + bugTable.get("webcompatMobile").length +
-            bugTable.get("criticals").length + bugTable.get("criticalsMobile").length +
-            bugTable.get("duplicates").length + bugTable.get("duplicatesMobile").length === 0) {
+        if (bugTable.get("bugzilla").length + bugTable.get("webcompat").length === 0) {
                 console.warn("List was empty or malformed!");
                 continue;
         }

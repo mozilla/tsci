@@ -202,10 +202,10 @@ async function addStaticData(sheets, spreadsheetId, listSize, listFile = 'data/l
         "startColumnIndex": 0,
         "endColumnIndex": 2
     };
-    const headers = ['Rank', 'Website', 'bugzilla', 'bugzilla (mobile)', 'webcompat.com',
-        'webcompat.com (mobile)', 'criticals', 'criticals (mobile)', 'duplicates',
-        'duplicates (mobile)', 'critical weight', 'SCI', 'SCI (mobile)', 'Site weight',
-        'Weighted SCI', 'Weighted SCI (mobile)'];
+    const headers = ['Rank', 'Website', 'bugzilla', 'bugzilla-M', 'webcompat.com',
+        'webcompat-M', 'criticals', 'criticals-M', 'duplicates',
+        'duplicates-M', 'critical weight', 'SCI', 'SCI-M', 'Site weight',
+        'Weighted SCI', 'Weighted SCI-M'];
 
     // Insert totals row.
     requests.push({

@@ -53,7 +53,8 @@ const fetchBugs = async (listFile = 'data/list.csv', bugzillaKey, githubKey, min
         bugzilla.push(bugzillaResult);
         bugzillaMobile.push(bugzillaMobileResult);
         const {
-            duplicatesResult, duplicatesMobileResult
+            duplicatesResult,
+            duplicatesMobileResult
         } = await getDuplicates(website, bugzillaKey, githubKey, minDate, maxDate);
         duplicates.push(duplicatesResult);
         duplicatesMobile.push(duplicatesMobileResult);
@@ -436,13 +437,13 @@ const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) 
         const results = await getAllGitHubResultsFor(octokit.request, {url: milestoneSearch});
         for (const item of results) {
             const bzId = ghToBzMap.get(item.number);
-            if (isMobileWebCompat(item) && bzId && item.milestone.title === "duplicate") {
-                dupedMobileBzIds.add(bzId);
-                dupedMobileGhIds.add(item.number);
-            }
             if (bzId && item.milestone.title === "duplicate") {
                 dupedBzIds.add(bzId);
                 dupedGhIds.add(item.number);
+                if (isMobileWebCompat(item)) {
+                    dupedMobileBzIds.add(bzId);
+                    dupedMobileGhIds.add(item.number);
+                }
             }
         }
     }
