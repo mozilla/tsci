@@ -7,7 +7,7 @@ const Octokit = require('@octokit/rest')
     .plugin(require('@octokit/plugin-retry'));
 const util = require('util')
 
-const searchConstraintQueryFragment = `&keywords_type=nowords&keywords=meta%2C%20&status_whiteboard_type=notregexp&status_whiteboard=sci%5C-exclude`;
+const searchConstraintQueryFragment = "&keywords_type=nowords&keywords=meta%2C%20&status_whiteboard_type=notregexp&status_whiteboard=sci%5C-exclude";
 
 /**
  * Fetch bugs and webcompat.com reports.
@@ -48,6 +48,11 @@ const fetchBugs = async (listFile = 'data/list.csv', bugzillaKey, githubKey, min
     return bugTable;
 }
 
+/**
+ * Returns a date formatted for API queries.
+ * @param {Date} date the requested date
+ * @returns the String with the formatted date
+ */
 function formatDateForAPIQueries(date) {
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, "0");
@@ -112,11 +117,11 @@ function getBugzillaPriorities() {
  * @param {Date} maxDate
  */
 const getBugzilla = async (website, bugzillaKey, minDate, maxDate = new Date()) => {
-    const minDateQuery = minDate ? formatDateForAPIQueries(minDate) : "2018";
+    const minDateQuery = formatDateForAPIQueries(minDate);
     const maxDateQuery = formatDateForAPIQueries(maxDate);
     const maxDateQueryFragment = `&f4=creation_ts&o4=lessthaneq&v4=${formatDateForAPIQueries(maxDate)}`;
     const openQuery = `https://bugzilla.mozilla.org/buglist.cgi?f1=OP${getBugzillaPriorities()}&bug_file_loc_type=regexp&o3=greaterthaneq&list_id=14636479&v3=${minDateQuery}&resolution=---&bug_file_loc=${formatWebSiteForRegExp(website)}&query_format=advanced&f3=creation_ts${getBugzillaStatuses()}${getBugzillaProducts()}${maxDateQueryFragment}${searchConstraintQueryFragment}`;
-    // const resolvedQuery = `https://bugzilla.mozilla.org/buglist.cgi?keywords=meta%2C%20&keywords_type=nowords${getBugzillaPriorities()}&list_id=14745792&status_whiteboard_type=notregexp&bug_file_loc=${formatWebSiteForRegExp(website)}&chfield=bug_status&chfieldfrom=${maxDateQuery}&o4=lessthaneq&chfieldvalue=RESOLVED&status_whiteboard=sci%5C-exclude&v4=${maxDateQuery}&f1=OP&o3=greaterthaneq&bug_file_loc_type=regexp&v3=${minDateQuery}&f4=creation_ts&query_format=advanced&f3=creation_ts${getBugzillaProducts()}`;
+    // const resolvedQuery = `https://bugzilla.mozilla.org/buglist.cgi?&list_id=14745792${getBugzillaPriorities()}&bug_file_loc=${formatWebSiteForRegExp(website)}&chfield=bug_status&chfieldfrom=${maxDateQuery}&o4=lessthaneq&chfieldvalue=RESOLVED&v4=${maxDateQuery}&f1=OP&o3=greaterthaneq&bug_file_loc_type=regexp&v3=${minDateQuery}&f4=creation_ts&query_format=advanced&f3=creation_ts${getBugzillaProducts()}${searchConstraintQueryFragment}`;
     const openApiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status,priority${getBugzillaPriorities()}&bug_file_loc=${formatWebSiteForRegExp(website)}&bug_file_loc_type=regexp${getBugzillaStatuses()}&f1=OP&f3=creation_ts&o3=greaterthaneq${getBugzillaProducts()}&resolution=---&v3=${minDateQuery}&api_key=${bugzillaKey}${maxDateQueryFragment}${searchConstraintQueryFragment}`;
     const resolvedApiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status,priority${getBugzillaPriorities()}&bug_file_loc=${formatWebSiteForRegExp(website)}&bug_file_loc_type=regexp&chfield=bug_status&chfieldfrom=${maxDateQuery}&chfieldvalue=RESOLVED&f1=OP&f3=creation_ts&f4=creation_ts&o3=greaterthaneq&o4=lessthaneq${getBugzillaProducts()}&v3=${minDateQuery}&v4=${maxDateQuery}&api_key=${bugzillaKey}${searchConstraintQueryFragment}`;
     const openResults = await bugzillaRetry(openApiQuery);
@@ -225,7 +230,7 @@ const getWebcompat = async (website, githubKey, minDate, maxDate) => {
     let date_range = "";
     if (minDate || maxDate) {
       date_range += "+created:" + [
-        minDate ? formatDateForAPIQueries(minDate) : "*",
+        formatDateForAPIQueries(minDate),
         maxDate ? formatDateForAPIQueries(maxDate) : "*",
       ].join("..");
       if (maxDate) {

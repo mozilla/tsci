@@ -9,6 +9,7 @@
     "t.co"
   ],
   "maxDate": null,
+  "minDate": "2018",
   "spreadsheetId": null,
   "writers": [
     "user@example.com"

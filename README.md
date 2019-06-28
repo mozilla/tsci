@@ -33,6 +33,9 @@ would look like:
   // A cutoff date for calculating the TSCI (if not a Sunday, will be rounded to the next Sunday).
   // E.g. a value of "2019-03-01" would lead to using "2019-03-03" (March 1st was a Friday).
   "maxDate": null,
+  // The earliest date to consider for when the bug or issue has to have been
+  // filed. By default 2018-01-01 is used.
+  "minDate": "2018",
   // The ID of a spreadsheet to append to.
   "spreadsheetId": null,
   // A list of Google accounts with whom the final spreadsheet should be shared.
