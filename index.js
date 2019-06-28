@@ -23,14 +23,20 @@ const main = async () => {
     const writers = config.writers || ['user@example.com'];
     const queryDates = [];
     const maxDate = config.maxDate || undefined;
+    const minDate = config.minDate || "2018";
     let id = config.spreadsheetId;
+
+    const parsedMinDate = new Date(minDate);
+    if (isNaN(parsedMinDate)) {
+        throw new Error("Wrong minDate format: use yyyy-mm-dd");
+    }
 
     const inputDate = process.argv[2] || maxDate;
     if (inputDate) {
         // We want to consider open bugs only until the end of the given week.
         const parsed = new Date(inputDate);
         if (isNaN(parsed)) {
-            throw new Error("Wrong date format: use yyyy-mm-dd");
+            throw new Error("Wrong maxDate format: use yyyy-mm-dd");
         }
 
         if (!inputDate.includes("-")) {
@@ -60,7 +66,7 @@ const main = async () => {
 
     for (const date of queryDates) {
         const LIST_FILE = await tranco.fetchList(LIST_SIZE, LIST_DIR, date);
-        const bugTable = await bugs.fetchBugs(LIST_FILE, bugzillaKey, githubKey, undefined, date);
+        const bugTable = await bugs.fetchBugs(LIST_FILE, bugzillaKey, githubKey, parsedMinDate, date);
         if (bugTable.get("bugzilla").length +
             bugTable.get("webcompat").length +
             bugTable.get("criticals").length +
