@@ -1,5 +1,7 @@
 # tsci
 
+[![Build Status](https://travis-ci.org/past/tsci.svg?branch=master)](https://travis-ci.org/past/tsci)
+
 Calculate the Top Site Compatibility Index web compat metric.
 
 ## Usage
