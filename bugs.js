@@ -439,7 +439,8 @@ const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) 
             if (isMobileWebCompat(item) && bzId && item.milestone.title === "duplicate") {
                 dupedMobileBzIds.add(bzId);
                 dupedMobileGhIds.add(item.number);
-            } else if (bzId && item.milestone.title === "duplicate") {
+            }
+            if (bzId && item.milestone.title === "duplicate") {
                 dupedBzIds.add(bzId);
                 dupedGhIds.add(item.number);
             }
