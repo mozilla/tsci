@@ -458,9 +458,10 @@ const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) 
         mobileParam += "%2C" + id;
     }
     const bzMobileLink = `https://bugzilla.mozilla.org/buglist.cgi?o1=anyexact&v1=${mobileParam}&f1=bug_id`;
+    // Reduce the weight of duplicates beyond the first one to 10% before returning.
     return {
-        duplicatesResult: dupedGhIds.size ? `=HYPERLINK("${bzLink}"; ${dupedGhIds.size})`: 0,
-        duplicatesMobileResult: dupedMobileGhIds.size ? `=HYPERLINK("${bzMobileLink}"; ${dupedMobileGhIds.size})` : 0
+        duplicatesResult: dupedGhIds.size ? `=HYPERLINK("${bzLink}"; ${dupedGhIds.size / 10 + 0.9})`: 0,
+        duplicatesMobileResult: dupedMobileGhIds.size ? `=HYPERLINK("${bzMobileLink}"; ${dupedMobileGhIds.size / 10 + 0.9})` : 0
     };
 }
 
