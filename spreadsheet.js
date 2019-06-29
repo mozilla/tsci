@@ -40,59 +40,60 @@ async function updateSummary(sheets, spreadsheetId, date) {
 
     let sheetId;
     for (const { properties } of result.data.sheets) {
-        if (properties.title === "Summary") {
-            sheetId = properties.sheetId;
-            const valueInputOption = 'USER_ENTERED';
-            const requests = [];
-            const range = {
-                "sheetId": sheetId,
-                "startRowIndex": 1,
-                "endRowIndex": 2,
-                "startColumnIndex": 0,
-                "endColumnIndex": 12
-            };
-
-            // Insert new row.
-            requests.push({
-                "insertRange": {
-                    range,
-                    "shiftDimension": 'ROWS'
-                },
-            });
-            const batchUpdateRequest = { requests };
-
-            result = await sheets.spreadsheets.batchUpdate({
-                spreadsheetId,
-                resource: batchUpdateRequest,
-            });
-
-            const summary = [
-                `=DATEVALUE("${title}")`,
-                `='${title}'!$C$1`,
-                `='${title}'!$D$1`,
-                `='${title}'!$E$1`,
-                `='${title}'!$F$1`,
-                `='${title}'!$G$1`,
-                `='${title}'!$H$1`,
-                `='${title}'!$I$1`,
-                `='${title}'!$J$1`,
-                `='${title}'!$L$1`,
-                `='${title}'!$M$1`,
-                `='${title}'!$O$1`,
-                `='${title}'!$P$1`
-            ];
-            result = await sheets.spreadsheets.values.update({
-                spreadsheetId,
-                range: `Summary!A2:M2`,
-                resource: {
-                    values: [summary],
-                },
-                valueInputOption,
-            });
-
-            console.log(`Updated summary sheet for date ${title}`);
-            break;
+        if (properties.title !== "Summary") {
+            continue;
         }
+        sheetId = properties.sheetId;
+        const valueInputOption = 'USER_ENTERED';
+        const requests = [];
+        const range = {
+            "sheetId": sheetId,
+            "startRowIndex": 1,
+            "endRowIndex": 2,
+            "startColumnIndex": 0,
+            "endColumnIndex": 12,
+        };
+
+        // Insert new row.
+        requests.push({
+            "insertRange": {
+                range,
+                "shiftDimension": 'ROWS'
+            },
+        });
+        const batchUpdateRequest = { requests };
+
+        result = await sheets.spreadsheets.batchUpdate({
+            spreadsheetId,
+            resource: batchUpdateRequest,
+        });
+
+        const summary = [
+            `=DATEVALUE("${title}")`,
+            `='${title}'!$C$1`,
+            `='${title}'!$D$1`,
+            `='${title}'!$E$1`,
+            `='${title}'!$F$1`,
+            `='${title}'!$G$1`,
+            `='${title}'!$H$1`,
+            `='${title}'!$I$1`,
+            `='${title}'!$J$1`,
+            `='${title}'!$L$1`,
+            `='${title}'!$M$1`,
+            `='${title}'!$O$1`,
+            `='${title}'!$P$1`
+        ];
+        result = await sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: `Summary!A2:M2`,
+            resource: {
+                values: [summary],
+            },
+            valueInputOption,
+        });
+
+        console.log(`Updated summary sheet for date ${title}`);
+        break;
     }
     if (!sheetId) {
         console.error(`Couldn't find Summary sheet to update with data for ${title}`);
@@ -231,6 +232,7 @@ async function findOrCreateSheet(sheets, spreadsheetId, maxDate) {
             }
         });
         console.log(`Found and cleared sheet with ID ${sheetId}`);
+        break;
     }
     // ... or create a new sheet.
     if (sheetId === undefined) {
@@ -498,5 +500,5 @@ module.exports = {
     createSpreadsheet,
     findOrCreateSheet,
     shareSheet,
-    updateSummary
+    updateSummary,
 }
