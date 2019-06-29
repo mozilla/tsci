@@ -84,6 +84,7 @@ const main = async () => {
         const { sheetId, title } = await spreadsheet.findOrCreateSheet(sheets, id, date);
         await spreadsheet.addStaticData(sheets, id, LIST_SIZE, LIST_FILE, sheetId, title);
         await spreadsheet.addBugData(sheets, id, bugTable, title);
+        await spreadsheet.updateSummary(sheets, id, date);
         for (const writer of writers) {
             await spreadsheet.shareSheet(drive, id, writer);
             console.log(`► https://docs.google.com/spreadsheets/d/${id}/edit`)
