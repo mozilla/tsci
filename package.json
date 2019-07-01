@@ -9,6 +9,7 @@
   "scripts": {
     "start": "GOOGLE_APPLICATION_CREDENTIALS='credentials.json' node index.js",
     "lint": "eslint *.js",
+    "lint-fix": "run-p 'lint -- --fix'",
     "test": "run-p lint"
   },
   "repository": {

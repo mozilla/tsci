@@ -5,7 +5,7 @@ async function createSpreadsheet(sheets, title, maxDate) {
     const resource = {
         properties: {
             title,
-        }
+        },
     }
     const { data } = await sheets.spreadsheets.create({ resource });
     const spreadsheetId = data.spreadsheetId;
@@ -22,9 +22,9 @@ async function createSpreadsheet(sheets, title, maxDate) {
                         sheetId,
                         title: sheetTitle,
                     },
-                    "fields": "title"
+                    "fields": "title",
                 },
-            }]
+            }],
         },
     });
 
@@ -58,7 +58,7 @@ async function updateSummary(sheets, spreadsheetId, date) {
         requests.push({
             "insertRange": {
                 range,
-                "shiftDimension": 'ROWS'
+                "shiftDimension": 'ROWS',
             },
         });
         const batchUpdateRequest = { requests };
@@ -81,7 +81,7 @@ async function updateSummary(sheets, spreadsheetId, date) {
             `='${title}'!$L$1`,
             `='${title}'!$M$1`,
             `='${title}'!$O$1`,
-            `='${title}'!$P$1`
+            `='${title}'!$P$1`,
         ];
         result = await sheets.spreadsheets.values.update({
             spreadsheetId,
@@ -224,12 +224,12 @@ async function findOrCreateSheet(sheets, spreadsheetId, maxDate) {
                 requests: [{
                     "updateCells": {
                         "range": {
-                            sheetId
+                            sheetId,
                         },
-                        "fields": "userEnteredValue"
-                    }
-                }]
-            }
+                        "fields": "userEnteredValue",
+                    },
+                }],
+            },
         });
         console.log(`Found and cleared sheet with ID ${sheetId}`);
         break;
@@ -242,18 +242,18 @@ async function findOrCreateSheet(sheets, spreadsheetId, maxDate) {
                 requests: [{
                     "addSheet": {
                         "properties": {
-                            title
-                        }
-                    }
-                }]
-            }
+                            title,
+                        },
+                    },
+                }],
+            },
         });
         sheetId = result.data.replies[0].addSheet.properties.sheetId;
         console.log(`Added sheet with ID ${sheetId}`);
     }
     return {
         sheetId,
-        title
+        title,
     }
 }
 
@@ -269,7 +269,7 @@ async function addStaticData(sheets, spreadsheetId, listSize, listFile = 'data/l
         "startRowIndex": 0,
         "endRowIndex": 1,
         "startColumnIndex": 0,
-        "endColumnIndex": 2
+        "endColumnIndex": 2,
     };
     const headers = ['Rank', 'Website', 'bugzilla', 'bugzilla-M', 'webcompat.com',
         'webcompat-M', 'criticals', 'criticals-M', 'duplicates',
@@ -280,14 +280,14 @@ async function addStaticData(sheets, spreadsheetId, listSize, listFile = 'data/l
     requests.push({
         "insertRange": {
             range,
-            "shiftDimension": 'ROWS'
+            "shiftDimension": 'ROWS',
         },
     });
     // Insert header row.
     requests.push({
         "insertRange": {
             range,
-            "shiftDimension": 'ROWS'
+            "shiftDimension": 'ROWS',
         },
     });
 
@@ -316,7 +316,7 @@ async function addStaticData(sheets, spreadsheetId, listSize, listFile = 'data/l
         `=SUM(M3:M${listSize + 2})`,
         "",
         `=SUM(O3:O${listSize + 2})`,
-        `=SUM(P3:P${listSize + 2})`
+        `=SUM(P3:P${listSize + 2})`,
     ];
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
@@ -427,7 +427,7 @@ async function addStaticData(sheets, spreadsheetId, listSize, listFile = 'data/l
     const fileStream = fs.createReadStream(listFile);
     const rl = readline.createInterface({
         input: fileStream,
-        crlfDelay: Infinity
+        crlfDelay: Infinity,
     });
 
     const ranks = [];
