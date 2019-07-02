@@ -24,10 +24,11 @@ module.exports = {
 
     // possible errors
     'array-callback-return': 'error',
+    'comma-dangle': ['error', 'always-multiline'],
     'consistent-return': 'error',
     'default-case': 'error',
     'dot-notation': 'error',
-    eqeqeq: 'error',
+    'eqeqeq': 'error',
     'for-direction': 'error',
     'no-alert': 'error',
     'no-caller': 'error',

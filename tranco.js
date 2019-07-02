@@ -30,7 +30,7 @@ const removeIgnoredDomains = function (listFile) {
                 countMatches: true,
                 files: listFile,
                 from: DOMAINS_REGEXP_CACHE,
-                to: ''
+                to: '',
             }).then(results => {
                 if (!results[0].hasChanged) {
                     console.warn('Warning: config.ignoredDomains set, but the list was not modified.');
@@ -136,5 +136,5 @@ function parseDate(date) {
 }
 
 module.exports = {
-    fetchList
+    fetchList,
 }

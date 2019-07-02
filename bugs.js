@@ -41,20 +41,20 @@ const fetchBugs = async (listFile = 'data/list.csv', bugzillaKey, githubKey, min
     const fileStream = fs.createReadStream(listFile);
     const rl = readline.createInterface({
         input: fileStream,
-        crlfDelay: Infinity
+        crlfDelay: Infinity,
     });
 
     for await (const line of rl) {
         const website = line.split(',')[1];
         const {
             bugzillaResult,
-            bugzillaMobileResult
+            bugzillaMobileResult,
         } = await getBugzilla(website, bugzillaKey, minDate, maxDate);
         bugzilla.push(bugzillaResult);
         bugzillaMobile.push(bugzillaMobileResult);
         const {
             duplicatesResult,
-            duplicatesMobileResult
+            duplicatesMobileResult,
         } = await getDuplicates(website, bugzillaKey, githubKey, minDate, maxDate);
         duplicates.push(duplicatesResult);
         duplicatesMobile.push(duplicatesMobileResult);
@@ -62,7 +62,7 @@ const fetchBugs = async (listFile = 'data/list.csv', bugzillaKey, githubKey, min
             webcompatResult,
             criticalsResult,
             webcompatMobileResult,
-            criticalsMobileResult
+            criticalsMobileResult,
         } = await getWebcompat(website, githubKey, minDate, maxDate);
         webcompat.push(webcompatResult);
         criticals.push(criticalsResult);
@@ -104,7 +104,7 @@ function getBugzillaProducts() {
         "Firefox",
         "Firefox for Android",
         "GeckoView",
-        "Web Compatibility"
+        "Web Compatibility",
     ];
     return `&product=${products.map(i => encodeURIComponent(i)).join("&product=")}`;
 }
@@ -117,7 +117,7 @@ function getBugzillaStatuses() {
         "UNCONFIRMED",
         "NEW",
         "ASSIGNED",
-        "REOPENED"
+        "REOPENED",
     ];
     return `&bug_status=${statuses.map(i => encodeURIComponent(i)).join("&bug_status=")}`;
 }
@@ -129,7 +129,7 @@ function getBugzillaPriorities() {
     const priorities = [
         "P1",
         "P2",
-        "P3"
+        "P3",
     ];
     return `&priority=${priorities.map(i => encodeURIComponent(i)).join("&priority=")}`;
 }
@@ -225,8 +225,8 @@ const getOctokitInstance = (function() {
                     onAbuseLimit: (retryAfter, options) => {
                         // Don't retry, only log an error.
                         console.error(`Abuse detected for request to ${options.url}!`)
-                    }
-                }
+                    },
+                },
             }));
         }
         return singletons.get(githubKey);
@@ -460,10 +460,10 @@ const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) 
     const bzMobileLink = `https://bugzilla.mozilla.org/buglist.cgi?o1=anyexact&v1=${mobileParam}&f1=bug_id`;
     return {
         duplicatesResult: dupedGhIds.size ? `=HYPERLINK("${bzLink}"; ${dupedGhIds.size})`: 0,
-        duplicatesMobileResult: dupedMobileGhIds.size ? `=HYPERLINK("${bzMobileLink}"; ${dupedMobileGhIds.size})` : 0
+        duplicatesMobileResult: dupedMobileGhIds.size ? `=HYPERLINK("${bzMobileLink}"; ${dupedMobileGhIds.size})` : 0,
     };
 }
 
 module.exports = {
-    fetchBugs
+    fetchBugs,
 }
