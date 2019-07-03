@@ -19,7 +19,11 @@ const {
     isNotSVWebCompat,
 } = require('./helpers');
 
-const searchConstraintQueryFragment = "&keywords_type=nowords&keywords=meta%2C%20&status_whiteboard_type=notregexp&status_whiteboard=sci%5C-exclude";
+// don't include results that:
+// * containt a meta keyword
+// * have a sci-exclude whiteboard tag
+// * were reported by a @softvision.ro email address
+const searchConstraintQueryFragment = "&keywords_type=nowords&keywords=meta%2C%20&status_whiteboard_type=notregexp&status_whiteboard=sci%5C-exclude&emailreporter1=1&emailtype1=notsubstring&email1=%40softvision.ro";
 
 /**
  * Fetch bugs and webcompat.com reports.
@@ -99,13 +103,15 @@ const getBugzilla = async (website, bugzillaKey, minDate, maxDate = new Date()) 
     const openQuery = `https://bugzilla.mozilla.org/buglist.cgi?f1=OP${getBugzillaPriorities()}&bug_file_loc_type=regexp&o3=greaterthaneq&list_id=14636479&v3=${minDateQuery}&resolution=---&bug_file_loc=${formatWebSiteForRegExp(website)}&query_format=advanced&f3=creation_ts${getBugzillaStatuses()}${getBugzillaProducts()}${maxDateQueryFragment}${searchConstraintQueryFragment}`;
     const openMobileQuery = `https://bugzilla.mozilla.org/buglist.cgi?f1=OP${getBugzillaPriorities()}&bug_file_loc_type=regexp&o3=greaterthaneq&list_id=14636479&v3=${minDateQuery}&resolution=---&bug_file_loc=${formatWebSiteForRegExp(website)}&query_format=advanced&f3=creation_ts${getBugzillaStatuses()}${maxDateQueryFragment}${searchConstraintQueryFragment}&j_top=OR&o8=equals&f8=product&v8=Core&o1=equals&v1=Fenix&f1=product&f2=OP&o3=equals&v3=Web%20Compatibility&f3=product&o4=equals&v4=Mobile&f4=component&f5=CP&o7=equals&v7=GeckoView&f7=product&o6=equals&v6=Firefox%20for%20Android&f6=product`;
     // const resolvedQuery = `https://bugzilla.mozilla.org/buglist.cgi?&list_id=14745792${getBugzillaPriorities()}&bug_file_loc=${formatWebSiteForRegExp(website)}&chfield=bug_status&chfieldfrom=${maxDateQuery}&o4=lessthaneq&chfieldvalue=RESOLVED&v4=${maxDateQuery}&f1=OP&o3=greaterthaneq&bug_file_loc_type=regexp&v3=${minDateQuery}&f4=creation_ts&query_format=advanced&f3=creation_ts${getBugzillaProducts()}${searchConstraintQueryFragment}`;
-    const openApiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status,priority,product,component${getBugzillaPriorities()}&bug_file_loc=${formatWebSiteForRegExp(website)}&bug_file_loc_type=regexp${getBugzillaStatuses()}&f1=OP&f3=creation_ts&o3=greaterthaneq${getBugzillaProducts()}&resolution=---&v3=${minDateQuery}&api_key=${bugzillaKey}${maxDateQueryFragment}${searchConstraintQueryFragment}`;
-    const resolvedApiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status,priority,product,component${getBugzillaPriorities()}&bug_file_loc=${formatWebSiteForRegExp(website)}&bug_file_loc_type=regexp&chfield=bug_status&chfieldfrom=${maxDateQuery}&chfieldvalue=RESOLVED&f1=OP&f3=creation_ts&f4=creation_ts&o3=greaterthaneq&o4=lessthaneq${getBugzillaProducts()}&v3=${minDateQuery}&v4=${maxDateQuery}&api_key=${bugzillaKey}${searchConstraintQueryFragment}`;
-    const openResults = await bugzillaRetry(openApiQuery);
-    const resolvedResults = await bugzillaRetry(resolvedApiQuery);
-    const openMobileResults = openResults.bugs.filter(isMobileBugzilla);
-    const resolvedMobileResults = resolvedResults.bugs.filter(isMobileBugzilla);
-    const results = openResults.bugs.concat(resolvedResults.bugs);
+    const openApiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status,priority,product,component,creator${getBugzillaPriorities()}&bug_file_loc=${formatWebSiteForRegExp(website)}&bug_file_loc_type=regexp${getBugzillaStatuses()}&f1=OP&f3=creation_ts&o3=greaterthaneq${getBugzillaProducts()}&resolution=---&v3=${minDateQuery}&api_key=${bugzillaKey}${maxDateQueryFragment}${searchConstraintQueryFragment}`;
+    const resolvedApiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status,priority,product,component,creator${getBugzillaPriorities()}&bug_file_loc=${formatWebSiteForRegExp(website)}&bug_file_loc_type=regexp&chfield=bug_status&chfieldfrom=${maxDateQuery}&chfieldvalue=RESOLVED&f1=OP&f3=creation_ts&f4=creation_ts&o3=greaterthaneq&o4=lessthaneq${getBugzillaProducts()}&v3=${minDateQuery}&v4=${maxDateQuery}&api_key=${bugzillaKey}${searchConstraintQueryFragment}`;
+    let openResults = await bugzillaRetry(openApiQuery);
+    let resolvedResults = await bugzillaRetry(resolvedApiQuery);
+    openResults = openResults.bugs.filter(isNotSVBugzilla);
+    resolvedResults = resolvedResults.bugs.filter(isNotSVBugzilla);
+    const openMobileResults = openResults.filter(isMobileBugzilla);
+    const resolvedMobileResults = resolvedResults.filter(isMobileBugzilla);
+    const results = openResults.concat(resolvedResults);
     const resultsMobile = openMobileResults.concat(resolvedMobileResults);
     return {
         bugzillaResult: `=HYPERLINK("${openQuery}"; ${results.length})`,
@@ -207,11 +213,13 @@ const getWebcompat = async (website, githubKey, minDate, maxDate) => {
     });
     // milestones: needsdiagnosis (3), needscontact (4), contactready (5), sitewait (6)
     const filteredResults = results.filter(bug => [3, 4, 5, 6].includes(bug.milestone.number))
-        // filter out any bugs with an sci-exclude label
-        .filter(bug => bug.labels.every(label => label.name !== "sci-exclude"));
+        // filter out any bugs with an sci-exclude label or filed by SoftVision
+        .filter(bug => bug.labels.every(label => label.name !== "sci-exclude"))
+        .filter(bug => isNotSVWebCompat(bug));
     const filteredCriticals = criticals.filter(bug => [3, 4, 5, 6].includes(bug.milestone.number))
-        // filter out any bugs with an sci-exclude label
-        .filter(bug => bug.labels.every(label => label.name !== "sci-exclude"));
+        // filter out any bugs with an sci-exclude label or filed by SoftVision
+        .filter(bug => bug.labels.every(label => label.name !== "sci-exclude"))
+        .filter(bug => isNotSVWebCompat(bug));
     const filteredMobileResults = filteredResults.filter(isMobileWebCompat);
     const filteredMobileCriticalResults = filteredCriticals.filter(isMobileWebCompat);
     return {
@@ -277,7 +285,7 @@ function getSeeAlsoLinks(bug) {
  * @param {*} githubKey
  */
 const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) => {
-    const apiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,creation_time,see_also,history,priority,product,component${getBugzillaPriorities()}&f1=see_also&f2=bug_status&f3=bug_file_loc&o1=anywordssubstr&o2=anywordssubstr&o3=regexp&v1=webcompat.com%2Cgithub.com%2Fwebcompat&v2=UNCONFIRMED%2CNEW%2CASSIGNED%2CREOPENED&v3=${formatWebSiteForRegExp(website)}&limit=0&api_key=${bugzillaKey}${searchConstraintQueryFragment}`
+    const apiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,creation_time,see_also,history,priority,product,component,creator${getBugzillaPriorities()}&f1=see_also&f2=bug_status&f3=bug_file_loc&o1=anywordssubstr&o2=anywordssubstr&o3=regexp&v1=webcompat.com%2Cgithub.com%2Fwebcompat&v2=UNCONFIRMED%2CNEW%2CASSIGNED%2CREOPENED&v3=${formatWebSiteForRegExp(website)}&limit=0&api_key=${bugzillaKey}${searchConstraintQueryFragment}`
     const promiseFn = () => fetch(apiQuery);
     const options = {
         times: 3,
