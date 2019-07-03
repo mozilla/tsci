@@ -1,5 +1,6 @@
 const fetch = require('node-fetch');
 const retry = require('promise-fn-retry');
+const util = require('util');
 
 /**
  * Retry a bugzilla query.
