@@ -1,3 +1,4 @@
+const config = require('./config.json');
 const fetch = require('node-fetch');
 const retry = require('promise-fn-retry');
 const util = require('util');
@@ -106,18 +107,17 @@ function isMobileWebCompat(bug) {
 }
 
 /**
-* Returns true if the webcompat.com bug was reported by one of our WebCompat SoftVision team members
+* Returns true if the webcompat.com bug was reported by QA
 */
-function isNotSVWebCompat(bug) {
-    const gitHubIDs = ['softvision-oana-arbuzov', 'softvision-sergiulogigan', 'cipriansv'];
-    return !gitHubIDs.includes(bug.user.login);
+function isNotQAWebCompat(bug) {
+    return !config.ignoredGitHubAccounts.includes(bug.user.login);
 }
 
 /**
-* Returns true if the Bugzilla bug was reported by one of our WebCompat SoftVision team members
+* Returns true if the Bugzilla bug was reported by QA
 */
-function isNotSVBugzilla(bug) {
-    return !bug.creator.includes('@softvision.ro');
+function isNotQABugzilla(bug) {
+    return !bug.creator.includes(config.ignoredQADomain);
 }
 
 module.exports = {
@@ -129,6 +129,6 @@ module.exports = {
     getBugzillaStatuses,
     isMobileBugzilla,
     isMobileWebCompat,
-    isNotSVBugzilla,
-    isNotSVWebCompat,
+    isNotQABugzilla,
+    isNotQAWebCompat,
 }

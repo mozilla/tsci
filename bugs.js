@@ -96,8 +96,8 @@ const getBugzilla = async (website, bugzillaKey, minDate, maxDate = new Date()) 
     const resolvedApiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status,priority,product,component,creator${helpers.getBugzillaPriorities()}&bug_file_loc=${helpers.formatWebSiteForRegExp(website)}&bug_file_loc_type=regexp&chfield=bug_status&chfieldfrom=${maxDateQuery}&chfieldvalue=RESOLVED&f1=OP&f3=creation_ts&f4=creation_ts&o3=greaterthaneq&o4=lessthaneq${helpers.getBugzillaProducts()}&v3=${minDateQuery}&v4=${maxDateQuery}&api_key=${bugzillaKey}${searchConstraintQueryFragment}`;
     let openResults = await helpers.bugzillaRetry(openApiQuery);
     let resolvedResults = await helpers.bugzillaRetry(resolvedApiQuery);
-    openResults = openResults.bugs.filter(helpers.isNotSVBugzilla);
-    resolvedResults = resolvedResults.bugs.filter(helpers.isNotSVBugzilla);
+    openResults = openResults.bugs.filter(helpers.isNotQABugzilla);
+    resolvedResults = resolvedResults.bugs.filter(helpers.isNotQABugzilla);
     const openMobileResults = openResults.filter(helpers.isMobileBugzilla);
     const resolvedMobileResults = resolvedResults.filter(helpers.isMobileBugzilla);
     const results = openResults.concat(resolvedResults);
@@ -204,11 +204,11 @@ const getWebcompat = async (website, githubKey, minDate, maxDate) => {
     const filteredResults = results.filter(bug => [3, 4, 5, 6].includes(bug.milestone.number))
         // filter out any bugs with an sci-exclude label or filed by SoftVision
         .filter(bug => bug.labels.every(label => label.name !== "sci-exclude"))
-        .filter(bug => helpers.isNotSVWebCompat(bug));
+        .filter(bug => helpers.isNotQAWebCompat(bug));
     const filteredCriticals = criticals.filter(bug => [3, 4, 5, 6].includes(bug.milestone.number))
         // filter out any bugs with an sci-exclude label or filed by SoftVision
         .filter(bug => bug.labels.every(label => label.name !== "sci-exclude"))
-        .filter(bug => helpers.isNotSVWebCompat(bug));
+        .filter(bug => helpers.isNotQAWebCompat(bug));
     const filteredMobileResults = filteredResults.filter(helpers.isMobileWebCompat);
     const filteredMobileCriticalResults = filteredCriticals.filter(helpers.isMobileWebCompat);
     return {
