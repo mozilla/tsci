@@ -15,7 +15,9 @@ const {
     getBugzillaStatuses,
     isMobileBugzilla,
     isMobileWebCompat,
-} = require('helpers');
+    isNotSVBugzilla,
+    isNotSVWebCompat,
+} = require('./helpers');
 
 const searchConstraintQueryFragment = "&keywords_type=nowords&keywords=meta%2C%20&status_whiteboard_type=notregexp&status_whiteboard=sci%5C-exclude";
 
