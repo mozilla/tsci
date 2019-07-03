@@ -8,6 +8,12 @@
     "github.io",
     "t.co"
   ],
+  "ignoredGitHubAccounts": [
+    "softvision-oana-arbuzov",
+    "softvision-sergiulogigan",
+    "cipriansv"
+  ],
+  "ignoredQADomain": "@softvision.ro",
   "maxDate": null,
   "minDate": "2018",
   "spreadsheetId": null,

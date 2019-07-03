@@ -30,6 +30,14 @@ would look like:
     "github.io",
     "t.co"
   ],
+  // A list of GitHub accounts to ignore bugs from (QA)
+  "ignoredGitHubAccounts": [
+    "softvision-oana-arbuzov",
+    "softvision-sergiulogigan",
+    "cipriansv"
+  ],
+  // A QA email domain for ignoring Bugzilla bugs
+  "ignoredQADomain": "@softvision.ro",
   // A cutoff date for calculating the TSCI (if not a Sunday, will be rounded to the next Sunday).
   // E.g. a value of "2019-03-01" would lead to using "2019-03-03" (March 1st was a Friday).
   "maxDate": null,
