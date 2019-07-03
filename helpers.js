@@ -104,6 +104,21 @@ function isMobileWebCompat(bug) {
     return bug.labels.some(label => mobileLabels.includes(label.name));
 }
 
+/**
+* Returns true if the webcompat.com bug was reported by one of our WebCompat SoftVision team members
+*/
+function isNotSVWebCompat(bug) {
+    const gitHubIDs = ['softvision-oana-arbuzov', 'softvision-sergiulogigan', 'cipriansv'];
+    return !gitHubIDs.includes(bug.user.login);
+}
+
+/**
+* Returns true if the Bugzilla bug was reported by one of our WebCompat SoftVision team members
+*/
+function isNotSVBugzilla(bug) {
+    return !bug.creator.includes('@softvision.ro');
+}
+
 module.exports = {
     bugzillaRetry,
     formatDateForAPIQueries,
@@ -113,4 +128,6 @@ module.exports = {
     getBugzillaStatuses,
     isMobileBugzilla,
     isMobileWebCompat,
+    isNotSVBugzilla,
+    isNotSVWebCompat,
 }
