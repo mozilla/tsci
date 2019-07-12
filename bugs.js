@@ -92,10 +92,12 @@ const getBugzilla = async (website, bugzillaKey, minDate, maxDate = new Date()) 
     const resolvedApiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status,priority,product,component,creator${helpers.getBugzillaPriorities()}${helpers.getBugURL(website)}&chfield=bug_status&chfieldfrom=${maxDateQuery}&chfieldvalue=RESOLVED&f1=OP&f3=creation_ts&f4=creation_ts&o3=greaterthaneq&o4=lessthaneq${helpers.getBugzillaProducts()}&v3=${minDateQuery}&v4=${maxDateQuery}&api_key=${bugzillaKey}${searchConstraintQueryFragment}`;
     let openResults = await helpers.bugzillaRetry(openApiQuery);
     let resolvedResults = await helpers.bugzillaRetry(resolvedApiQuery);
-    openResults = openResults.bugs.filter(helpers.isNotQABugzilla);
-    resolvedResults = resolvedResults.bugs.filter(helpers.isNotQABugzilla);
-    const openMobileResults = openResults.filter(helpers.isMobileBugzilla);
-    const resolvedMobileResults = resolvedResults.filter(helpers.isMobileBugzilla);
+    openResults = openResults.bugs.filter(helpers.isNotQA);
+    resolvedResults = resolvedResults.bugs.filter(helpers.isNotQA);
+    const openMobileResults = openResults.filter(helpers.isMobile);
+    const resolvedMobileResults = resolvedResults.filter(helpers.isMobile);
+    const openDesktopResults = openResults.filter(helpers.isDesktop);
+    const resolvedDesktopResults = resolvedResults.filter(helpers.isDesktop);
     const results = openResults.concat(resolvedResults);
     const resultsMobile = openMobileResults.concat(resolvedMobileResults);
     return {
@@ -200,13 +202,15 @@ const getWebcompat = async (website, githubKey, minDate, maxDate) => {
     const filteredResults = results.filter(bug => [3, 4, 5, 6].includes(bug.milestone.number))
         // filter out any bugs with an sci-exclude label or filed by SoftVision
         .filter(bug => bug.labels.every(label => label.name !== "sci-exclude"))
-        .filter(bug => helpers.isNotQAWebCompat(bug));
+        .filter(bug => helpers.isNotQA(bug));
     const filteredCriticals = criticals.filter(bug => [3, 4, 5, 6].includes(bug.milestone.number))
         // filter out any bugs with an sci-exclude label or filed by SoftVision
         .filter(bug => bug.labels.every(label => label.name !== "sci-exclude"))
-        .filter(bug => helpers.isNotQAWebCompat(bug));
-    const filteredMobileResults = filteredResults.filter(helpers.isMobileWebCompat);
-    const filteredMobileCriticalResults = filteredCriticals.filter(helpers.isMobileWebCompat);
+        .filter(bug => helpers.isNotQA(bug));
+    const filteredMobileResults = filteredResults.filter(helpers.isMobile);
+    const filteredDesktopResults = filteredResults.filter(helpers.isDesktop);
+    const filteredMobileCriticalResults = filteredCriticals.filter(helpers.isMobile);
+    const filteredDesktopCriticalResults = filteredCriticals.filter(helpers.isDesktop);
     return {
         webcompatResult: `=HYPERLINK("${webcompatQuery}"; ${filteredResults.length})`,
         criticalsResult: `=HYPERLINK("${criticalsQuery}"; ${filteredCriticals.length})`,
@@ -326,7 +330,7 @@ const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) 
             if (bzId && item.milestone.title === "duplicate") {
                 dupedBzIds.add(bzId);
                 dupedGhIds.add(item.number);
-                if (helpers.isMobileWebCompat(item)) {
+                if (helpers.isMobile(item)) {
                     dupedMobileBzIds.add(bzId);
                     dupedMobileGhIds.add(item.number);
                 }
