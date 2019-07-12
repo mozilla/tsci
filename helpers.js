@@ -17,6 +17,10 @@ const bugzillaRetry = async (query) => {
         onRetry: (error) => {
             console.warn(`Retrying buzgilla query ${query} due to ${error.message}!`)
         },
+        shouldRetry: (error) => {
+            console.log(error);
+            return true;
+        },
     };
     return retry(promiseFn, options)
         .then(res => {
