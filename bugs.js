@@ -9,8 +9,8 @@ const helpers = require('./helpers');
 // don't include results that:
 // * contain a meta keyword
 // * have a sci-exclude whiteboard tag
-// * were reported by a @softvision.ro email address
-const searchConstraintQueryFragment = "&keywords_type=nowords&keywords=meta%2C%20&status_whiteboard_type=notregexp&status_whiteboard=sci%5C-exclude&emailreporter1=1&emailtype1=notsubstring&email1=%40softvision.ro";
+// * were reported by a @softvision email address
+const searchConstraintQueryFragment = "&keywords_type=nowords&keywords=meta%2C%20&status_whiteboard_type=notregexp&status_whiteboard=sci%5C-exclude&emailreporter1=1&emailtype1=notsubstring&email1=%40softvision";
 
 /**
  * Fetch bugs and webcompat.com reports.
