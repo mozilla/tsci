@@ -69,6 +69,13 @@ function getBugzillaProducts() {
 }
 
 /**
+ * Returns a the relevant Bugzilla params for finding a bug by URL
+ */
+function getBugURL(url) {
+    return `&bug_file_loc_type=regexp&bug_file_loc=${formatWebSiteForRegExp(url)}`;
+}
+
+/**
  * Returns a URL encoded string containing the Buzilla statuses (as GET params)
  */
 function getBugzillaStatuses() {
@@ -128,6 +135,7 @@ module.exports = {
     bugzillaRetry,
     formatDateForAPIQueries,
     formatWebSiteForRegExp,
+    getBugURL,
     getBugzillaPriorities,
     getBugzillaProducts,
     getBugzillaStatuses,
