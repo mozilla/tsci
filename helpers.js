@@ -121,7 +121,7 @@ function isDesktop(bug) {
 }
 
 /**
-* Returns true if the bug was reported by QA
+* Returns true if the bug was not reported by QA
 */
 function isNotQA(bug) {
     return !(bug.creator ? bug.creator.includes(config.ignoredQADomain) :

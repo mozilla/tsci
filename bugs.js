@@ -369,25 +369,23 @@ const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) 
         }
     }
 
+    const getBzLink = (param) => `https://bugzilla.mozilla.org/buglist.cgi?o1=anyexact&v1=${param}&f1=bug_id`;
     let param = "";
     for (const id of dupedBzIds) {
         param += "%2C" + id;
     }
-    const bzLink = `https://bugzilla.mozilla.org/buglist.cgi?o1=anyexact&v1=${param}&f1=bug_id`;
     let mobileParam = "";
     for (const id of dupedMobileBzIds) {
         mobileParam += "%2C" + id;
     }
-    const bzMobileLink = `https://bugzilla.mozilla.org/buglist.cgi?o1=anyexact&v1=${mobileParam}&f1=bug_id`;
     let desktopParam = "";
     for (const id of dupedDesktopBzIds) {
         desktopParam += "%2C" + id;
     }
-    const bzDesktopLink = `https://bugzilla.mozilla.org/buglist.cgi?o1=anyexact&v1=${desktopParam}&f1=bug_id`;
     return {
-        duplicatesResult: dupedGhIds.size ? `=HYPERLINK("${bzLink}"; ${dupedGhIds.size})`: 0,
-        duplicatesMobileResult: dupedMobileGhIds.size ? `=HYPERLINK("${bzMobileLink}"; ${dupedMobileGhIds.size})` : 0,
-        duplicatesDesktopResult: dupedDesktopGhIds.size ? `=HYPERLINK("${bzDesktopLink}"; ${dupedDesktopGhIds.size})` : 0,
+        duplicatesResult: dupedGhIds.size ? `=HYPERLINK("${getBzLink(param)}"; ${dupedGhIds.size})`: 0,
+        duplicatesMobileResult: dupedMobileGhIds.size ? `=HYPERLINK("${getBzLink(mobileParam)}"; ${dupedMobileGhIds.size})` : 0,
+        duplicatesDesktopResult: dupedDesktopGhIds.size ? `=HYPERLINK("${getBzLink(desktopParam)}"; ${dupedDesktopGhIds.size})` : 0,
     };
 }
 
