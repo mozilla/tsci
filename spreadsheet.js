@@ -78,14 +78,20 @@ async function updateSummary(sheets, spreadsheetId, date) {
             `='${title}'!$H$1`,
             `='${title}'!$I$1`,
             `='${title}'!$J$1`,
+            `='${title}'!$K$1`,
             `='${title}'!$L$1`,
             `='${title}'!$M$1`,
-            `='${title}'!$O$1`,
+            `='${title}'!$N$1`,
             `='${title}'!$P$1`,
+            `='${title}'!$Q$1`,
+            `='${title}'!$R$1`,
+            `='${title}'!$T$1`,
+            `='${title}'!$U$1`,
+            `='${title}'!$V$1`,
         ];
         result = await sheets.spreadsheets.values.update({
             spreadsheetId,
-            range: `Summary!A2:M2`,
+            range: `Summary!A2:S2`,
             resource: {
                 values: [summary],
             },
@@ -130,10 +136,22 @@ async function addBugData(sheets, spreadsheetId, bugTable, title) {
     })
     console.log('Updated bugzilla (mobile) cells: ' + result.data.updatedCells);
 
+    const bugzillaDesktop = bugTable.get("bugzillaDesktop");
+    result = await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${title}!E3:E${bugzillaDesktop.length + 2}`,
+        resource: {
+            values: [bugzillaDesktop],
+            majorDimension: "COLUMNS",
+        },
+        valueInputOption,
+    })
+    console.log('Updated bugzilla (desktop) cells: ' + result.data.updatedCells);
+
     const webcompat = bugTable.get("webcompat");
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${title}!E3:E${webcompat.length + 2}`,
+        range: `${title}!F3:F${webcompat.length + 2}`,
         resource: {
             values: [webcompat],
             majorDimension: "COLUMNS",
@@ -145,7 +163,7 @@ async function addBugData(sheets, spreadsheetId, bugTable, title) {
     const webcompatMobile = bugTable.get("webcompatMobile");
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${title}!F3:F${webcompatMobile.length + 2}`,
+        range: `${title}!G3:G${webcompatMobile.length + 2}`,
         resource: {
             values: [webcompatMobile],
             majorDimension: "COLUMNS",
@@ -154,10 +172,22 @@ async function addBugData(sheets, spreadsheetId, bugTable, title) {
     })
     console.log('Updated webcompat (mobile) cells: ' + result.data.updatedCells);
 
+    const webcompatDesktop = bugTable.get("webcompatDesktop");
+    result = await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${title}!H3:H${webcompatDesktop.length + 2}`,
+        resource: {
+            values: [webcompatDesktop],
+            majorDimension: "COLUMNS",
+        },
+        valueInputOption,
+    })
+    console.log('Updated webcompat (Desktop) cells: ' + result.data.updatedCells);
+
     const criticals = bugTable.get("criticals");
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${title}!G3:G${criticals.length + 2}`,
+        range: `${title}!I3:I${criticals.length + 2}`,
         resource: {
             values: [criticals],
             majorDimension: "COLUMNS",
@@ -169,7 +199,7 @@ async function addBugData(sheets, spreadsheetId, bugTable, title) {
     const criticalsMobile = bugTable.get("criticalsMobile");
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${title}!H3:H${criticalsMobile.length + 2}`,
+        range: `${title}!J3:J${criticalsMobile.length + 2}`,
         resource: {
             values: [criticalsMobile],
             majorDimension: "COLUMNS",
@@ -178,10 +208,22 @@ async function addBugData(sheets, spreadsheetId, bugTable, title) {
     })
     console.log('Updated criticals (mobile) cells: ' + result.data.updatedCells);
 
+    const criticalsDesktop = bugTable.get("criticalsDesktop");
+    result = await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${title}!K3:K${criticalsDesktop.length + 2}`,
+        resource: {
+            values: [criticalsDesktop],
+            majorDimension: "COLUMNS",
+        },
+        valueInputOption,
+    })
+    console.log('Updated criticals (Desktop) cells: ' + result.data.updatedCells);
+
     const duplicates = bugTable.get("duplicates");
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${title}!I3:I${duplicates.length + 2}`,
+        range: `${title}!L3:L${duplicates.length + 2}`,
         resource: {
             values: [duplicates],
             majorDimension: "COLUMNS",
@@ -193,7 +235,7 @@ async function addBugData(sheets, spreadsheetId, bugTable, title) {
     const duplicatesMobile = bugTable.get("duplicatesMobile");
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${title}!J3:J${duplicatesMobile.length + 2}`,
+        range: `${title}!M3:M${duplicatesMobile.length + 2}`,
         resource: {
             values: [duplicatesMobile],
             majorDimension: "COLUMNS",
@@ -201,6 +243,18 @@ async function addBugData(sheets, spreadsheetId, bugTable, title) {
         valueInputOption,
     })
     console.log('Updated duplicates (mobile) cells: ' + result.data.updatedCells);
+
+    const duplicatesDesktop = bugTable.get("duplicatesDesktop");
+    result = await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${title}!N3:N${duplicatesDesktop.length + 2}`,
+        resource: {
+            values: [duplicatesDesktop],
+            majorDimension: "COLUMNS",
+        },
+        valueInputOption,
+    })
+    console.log('Updated duplicates (Desktop) cells: ' + result.data.updatedCells);
 }
 
 async function findOrCreateSheet(sheets, spreadsheetId, maxDate) {
@@ -271,10 +325,11 @@ async function addStaticData(sheets, spreadsheetId, listSize, listFile = 'data/l
         "startColumnIndex": 0,
         "endColumnIndex": 2,
     };
-    const headers = ['Rank', 'Website', 'bugzilla', 'bugzilla-M', 'webcompat.com',
-        'webcompat-M', 'criticals', 'criticals-M', 'duplicates',
-        'duplicates-M', 'critical weight', 'SCI', 'SCI-M', 'Site weight',
-        'Weighted SCI', 'Weighted SCI-M'];
+    const headers = ['Rank', 'Website', 'bugzilla', 'bugzilla-M', 'bugzilla-D',
+        'webcompat.com', 'webcompat-M', 'webcompat-D', 'criticals', 'criticals-M',
+        'criticals-D', 'duplicates', 'duplicates-M', 'duplicates-D', 'critical weight',
+        'SCI', 'SCI-M', 'SCI-D','Site weight', 'Weighted SCI', 'Weighted SCI-M',
+        'Weighted SCI-D'];
 
     // Insert totals row.
     requests.push({
@@ -311,16 +366,22 @@ async function addStaticData(sheets, spreadsheetId, listSize, listFile = 'data/l
         `=SUM(H3:H${listSize + 2})`,
         `=SUM(I3:I${listSize + 2})`,
         `=SUM(J3:J${listSize + 2})`,
-        "",
+        `=SUM(K3:K${listSize + 2})`,
         `=SUM(L3:L${listSize + 2})`,
         `=SUM(M3:M${listSize + 2})`,
+        `=SUM(N3:N${listSize + 2})`,
         "",
-        `=SUM(O3:O${listSize + 2})`,
         `=SUM(P3:P${listSize + 2})`,
+        `=SUM(Q3:Q${listSize + 2})`,
+        `=SUM(R3:R${listSize + 2})`,
+        "",
+        `=SUM(T3:T${listSize + 2})`,
+        `=SUM(U3:U${listSize + 2})`,
+        `=SUM(V3:V${listSize + 2})`,
     ];
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${title}!A1:P1`,
+        range: `${title}!A1:V1`,
         resource: {
             values: [totals],
         },
@@ -330,7 +391,7 @@ async function addStaticData(sheets, spreadsheetId, listSize, listFile = 'data/l
 
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${title}!A2:P2`,
+        range: `${title}!A2:V2`,
         resource: {
             values: [headers],
         },
@@ -340,7 +401,7 @@ async function addStaticData(sheets, spreadsheetId, listSize, listFile = 'data/l
 
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${title}!K3`,
+        range: `${title}!O3`,
         resource: {
             values: [['25%']],
         },
@@ -354,7 +415,7 @@ async function addStaticData(sheets, spreadsheetId, listSize, listFile = 'data/l
     }
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${title}!N3:N${listSize+2}`,
+        range: `${title}!S3:S${listSize+2}`,
         resource: {
             values: [weights],
             majorDimension: "COLUMNS",
@@ -365,11 +426,11 @@ async function addStaticData(sheets, spreadsheetId, listSize, listFile = 'data/l
 
     const sci = [];
     for (let i = 2; i < listSize + 2; i++) {
-        sci.push(`=(C${i + 1} + E${i + 1} + I${i + 1}) + (G${i + 1} * $K$3)`)
+        sci.push(`=(C${i + 1} + F${i + 1} + L${i + 1}) + (I${i + 1} * $O$3)`)
     }
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${title}!L3:L${listSize + 2}`,
+        range: `${title}!P3:P${listSize + 2}`,
         resource: {
             values: [sci],
             majorDimension: "COLUMNS",
@@ -380,11 +441,11 @@ async function addStaticData(sheets, spreadsheetId, listSize, listFile = 'data/l
 
     const mobileSci = [];
     for (let i = 2; i < listSize + 2; i++) {
-        mobileSci.push(`=(D${i + 1} + F${i + 1} + J${i + 1}) + (H${i + 1} * $K$3)`)
+        mobileSci.push(`=(D${i + 1} + G${i + 1} + M${i + 1}) + (J${i + 1} * $O$3)`)
     }
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${title}!M3:M${listSize + 2}`,
+        range: `${title}!Q3:Q${listSize + 2}`,
         resource: {
             values: [mobileSci],
             majorDimension: "COLUMNS",
@@ -393,13 +454,28 @@ async function addStaticData(sheets, spreadsheetId, listSize, listFile = 'data/l
     })
     console.log('Updated SCI (mobile) cells: ' + result.data.updatedCells);
 
-    const wsci = [];
+    const desktopSci = [];
     for (let i = 2; i < listSize + 2; i++) {
-        wsci.push(`=L${i + 1}*N${i + 1}`)
+        desktopSci.push(`=(E${i + 1} + H${i + 1} + N${i + 1}) + (K${i + 1} * $O$3)`)
     }
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${title}!O3:O${listSize + 2}`,
+        range: `${title}!R3:R${listSize + 2}`,
+        resource: {
+            values: [desktopSci],
+            majorDimension: "COLUMNS",
+        },
+        valueInputOption,
+    })
+    console.log('Updated SCI (desktop) cells: ' + result.data.updatedCells);
+
+    const wsci = [];
+    for (let i = 2; i < listSize + 2; i++) {
+        wsci.push(`=P${i + 1}*S${i + 1}`)
+    }
+    result = await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${title}!T3:T${listSize + 2}`,
         resource: {
             values: [wsci],
             majorDimension: "COLUMNS",
@@ -410,11 +486,11 @@ async function addStaticData(sheets, spreadsheetId, listSize, listFile = 'data/l
 
     const mobileWsci = [];
     for (let i = 2; i < listSize + 2; i++) {
-        mobileWsci.push(`=M${i + 1}*N${i + 1}`)
+        mobileWsci.push(`=Q${i + 1}*S${i + 1}`)
     }
     result = await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${title}!P3:P${listSize + 2}`,
+        range: `${title}!U3:U${listSize + 2}`,
         resource: {
             values: [mobileWsci],
             majorDimension: "COLUMNS",
@@ -422,6 +498,21 @@ async function addStaticData(sheets, spreadsheetId, listSize, listFile = 'data/l
         valueInputOption,
     });
     console.log('Updated weighted SCI (mobile) cells: ' + result.data.updatedCells);
+
+    const desktopWsci = [];
+    for (let i = 2; i < listSize + 2; i++) {
+        desktopWsci.push(`=R${i + 1}*S${i + 1}`)
+    }
+    result = await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${title}!V3:V${listSize + 2}`,
+        resource: {
+            values: [desktopWsci],
+            majorDimension: "COLUMNS",
+        },
+        valueInputOption,
+    });
+    console.log('Updated weighted SCI (desktop) cells: ' + result.data.updatedCells);
 
     // Load the website list.
     const fileStream = fs.createReadStream(listFile);

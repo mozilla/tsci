@@ -9,8 +9,8 @@ const helpers = require('./helpers');
 // don't include results that:
 // * contain a meta keyword
 // * have a sci-exclude whiteboard tag
-// * were reported by a @softvision.ro email address
-const searchConstraintQueryFragment = "&keywords_type=nowords&keywords=meta%2C%20&status_whiteboard_type=notregexp&status_whiteboard=sci%5C-exclude&emailreporter1=1&emailtype1=notsubstring&email1=%40softvision.ro";
+// * were reported by a @softvision email address
+const searchConstraintQueryFragment = "&keywords_type=nowords&keywords=meta%2C%20&status_whiteboard_type=notregexp&status_whiteboard=sci%5C-exclude&emailreporter1=1&emailtype1=notsubstring&email1=%40softvision";
 
 /**
  * Fetch bugs and webcompat.com reports.
@@ -23,21 +23,29 @@ const fetchBugs = async (listFile = 'data/list.csv', bugzillaKey, githubKey, min
     const currentLine = ((i = 0) => () => ++i)();
     const bugzilla = [];
     const bugzillaMobile = [];
+    const bugzillaDesktop = [];
     const webcompat = [];
     const webcompatMobile = [];
+    const webcompatDesktop = [];
     const criticals = [];
     const criticalsMobile = [];
+    const criticalsDesktop = [];
     const duplicates = [];
     const duplicatesMobile = [];
+    const duplicatesDesktop = [];
     const bugTable = new Map();
 
     bugTable.set("bugzilla", bugzilla);
     bugTable.set("webcompat", webcompat);
     bugTable.set("criticals", criticals);
+    bugTable.set("duplicates", duplicates);
+    bugTable.set("bugzillaDesktop", bugzillaDesktop);
+    bugTable.set("webcompatDesktop", webcompatDesktop);
+    bugTable.set("criticalsDesktop", criticalsDesktop);
+    bugTable.set("duplicatesDesktop", duplicatesDesktop);
     bugTable.set("bugzillaMobile", bugzillaMobile);
     bugTable.set("webcompatMobile", webcompatMobile);
     bugTable.set("criticalsMobile", criticalsMobile);
-    bugTable.set("duplicates", duplicates);
     bugTable.set("duplicatesMobile", duplicatesMobile);
 
     // Load the website list.
@@ -52,25 +60,33 @@ const fetchBugs = async (listFile = 'data/list.csv', bugzillaKey, githubKey, min
         const {
             bugzillaResult,
             bugzillaMobileResult,
+            bugzillaDesktopResult,
         } = await getBugzilla(website, bugzillaKey, minDate, maxDate);
         bugzilla.push(bugzillaResult);
         bugzillaMobile.push(bugzillaMobileResult);
+        bugzillaDesktop.push(bugzillaDesktopResult);
         const {
             duplicatesResult,
             duplicatesMobileResult,
+            duplicatesDesktopResult,
         } = await getDuplicates(website, bugzillaKey, githubKey, minDate, maxDate);
         duplicates.push(duplicatesResult);
         duplicatesMobile.push(duplicatesMobileResult);
+        duplicatesDesktop.push(duplicatesDesktopResult);
         const {
             webcompatResult,
             criticalsResult,
             webcompatMobileResult,
             criticalsMobileResult,
+            webcompatDesktopResult,
+            criticalsDesktopResult,
         } = await getWebcompat(website, githubKey, minDate, maxDate);
         webcompat.push(webcompatResult);
         criticals.push(criticalsResult);
         webcompatMobile.push(webcompatMobileResult);
         criticalsMobile.push(criticalsMobileResult);
+        webcompatDesktop.push(webcompatDesktopResult);
+        criticalsDesktop.push(criticalsDesktopResult);
         console.log(`Fetched bug data for site #${currentLine()}: ${website}`);
     }
     return bugTable;
@@ -83,26 +99,31 @@ const fetchBugs = async (listFile = 'data/list.csv', bugzillaKey, githubKey, min
  * @param {Date} minDate
  * @param {Date} maxDate
  */
+
 const getBugzilla = async (website, bugzillaKey, minDate, maxDate = new Date()) => {
     const minDateQuery = helpers.formatDateForAPIQueries(minDate);
     const maxDateQuery = helpers.formatDateForAPIQueries(maxDate);
-    const maxDateQueryFragment = `&f4=creation_ts&o4=lessthaneq&v4=${helpers.formatDateForAPIQueries(maxDate)}`;
-    const openQuery = `https://bugzilla.mozilla.org/buglist.cgi?f1=OP${helpers.getBugzillaPriorities()}&bug_file_loc_type=regexp&o3=greaterthaneq&list_id=14636479&v3=${minDateQuery}&resolution=---&bug_file_loc=${helpers.formatWebSiteForRegExp(website)}&query_format=advanced&f3=creation_ts${helpers.getBugzillaStatuses()}${helpers.getBugzillaProducts()}${maxDateQueryFragment}${searchConstraintQueryFragment}`;
-    const openMobileQuery = `https://bugzilla.mozilla.org/buglist.cgi?f1=OP${helpers.getBugzillaPriorities()}&bug_file_loc_type=regexp&o3=greaterthaneq&list_id=14636479&v3=${minDateQuery}&resolution=---&bug_file_loc=${helpers.formatWebSiteForRegExp(website)}&query_format=advanced&f3=creation_ts${helpers.getBugzillaStatuses()}${maxDateQueryFragment}${searchConstraintQueryFragment}&j_top=OR&o8=equals&f8=product&v8=Core&o1=equals&v1=Fenix&f1=product&f2=OP&o3=equals&v3=Web%20Compatibility&f3=product&o4=equals&v4=Mobile&f4=component&f5=CP&o7=equals&v7=GeckoView&f7=product&o6=equals&v6=Firefox%20for%20Android&f6=product`;
-    // const resolvedQuery = `https://bugzilla.mozilla.org/buglist.cgi?&list_id=14745792${getBugzillaPriorities()}&bug_file_loc=${formatWebSiteForRegExp(website)}&chfield=bug_status&chfieldfrom=${maxDateQuery}&o4=lessthaneq&chfieldvalue=RESOLVED&v4=${maxDateQuery}&f1=OP&o3=greaterthaneq&bug_file_loc_type=regexp&v3=${minDateQuery}&f4=creation_ts&query_format=advanced&f3=creation_ts${getBugzillaProducts()}${searchConstraintQueryFragment}`;
-    const openApiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status,priority,product,component,creator${helpers.getBugzillaPriorities()}&bug_file_loc=${helpers.formatWebSiteForRegExp(website)}&bug_file_loc_type=regexp${helpers.getBugzillaStatuses()}&f1=OP&f3=creation_ts&o3=greaterthaneq${helpers.getBugzillaProducts()}&resolution=---&v3=${minDateQuery}&api_key=${bugzillaKey}${maxDateQueryFragment}${searchConstraintQueryFragment}`;
-    const resolvedApiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status,priority,product,component,creator${helpers.getBugzillaPriorities()}&bug_file_loc=${helpers.formatWebSiteForRegExp(website)}&bug_file_loc_type=regexp&chfield=bug_status&chfieldfrom=${maxDateQuery}&chfieldvalue=RESOLVED&f1=OP&f3=creation_ts&f4=creation_ts&o3=greaterthaneq&o4=lessthaneq${helpers.getBugzillaProducts()}&v3=${minDateQuery}&v4=${maxDateQuery}&api_key=${bugzillaKey}${searchConstraintQueryFragment}`;
+    const maxDateQueryFragment = (num) => `&f${num}=creation_ts&o${num}=lessthaneq&v${num}=${helpers.formatDateForAPIQueries(maxDate)}`;
+    const openQuery = `https://bugzilla.mozilla.org/buglist.cgi?query_format=advanced&f1=OP${helpers.getBugzillaPriorities()}${helpers.getBugURL(website)}&o3=greaterthaneq&list_id=14636479&v3=${minDateQuery}&resolution=---&f3=creation_ts${helpers.getBugzillaStatuses()}${helpers.getBugzillaProducts()}${maxDateQueryFragment(4)}${searchConstraintQueryFragment}`;
+    const openMobileQuery = `https://bugzilla.mozilla.org/buglist.cgi?query_format=advanced&f1=OP${helpers.getBugzillaPriorities()}${helpers.getBugURL(website)}&f2=creation_ts&o2=greaterthaneq&v2=${minDateQuery}&resolution=---${helpers.getBugzillaStatuses()}${maxDateQueryFragment(3)}${searchConstraintQueryFragment}&j4=OR&f4=OP&f5=product&o5=equals&v5=Core&f6=product&o6=equals&v6=Fenix&f7=product&o7=equals&v7=Firefox%20for%20Android&f8=product&o8=equals&v8=GeckoView&f9=OP&f10=product&o10=equals&v10=Web%20Compatibility&f11=component&o11=equals&v11=Mobile&f12=CP&f13=CP&f14=CP`;
+    const openDesktopQuery = `https://bugzilla.mozilla.org/buglist.cgi?query_format=advanced&f1=OP${helpers.getBugzillaPriorities()}${helpers.getBugURL(website)}&f2=creation_ts&o2=greaterthaneq&v2=${minDateQuery}&resolution=---${helpers.getBugzillaStatuses()}${maxDateQueryFragment(3)}${searchConstraintQueryFragment}&o5=equals&o9=equals&v5=Core&f12=CP&v9=Desktop&j4=OR&f10=CP&v6=Firefox&f8=product&o6=equals&f9=component&f4=OP&f5=product&v8=Web%20Compatibility&f6=product&f7=OP&o8=equals`;
+    const openApiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status,priority,product,component,creator${helpers.getBugzillaPriorities()}${helpers.getBugURL(website)}${helpers.getBugzillaStatuses()}&f1=OP&f3=creation_ts&o3=greaterthaneq${helpers.getBugzillaProducts()}&resolution=---&v3=${minDateQuery}&api_key=${bugzillaKey}${maxDateQueryFragment(4)}${searchConstraintQueryFragment}`;
+    const resolvedApiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,summary,status,priority,product,component,creator${helpers.getBugzillaPriorities()}${helpers.getBugURL(website)}&chfield=bug_status&chfieldfrom=${maxDateQuery}&chfieldvalue=RESOLVED&f1=OP&f3=creation_ts&f4=creation_ts&o3=greaterthaneq&o4=lessthaneq${helpers.getBugzillaProducts()}&v3=${minDateQuery}&v4=${maxDateQuery}&api_key=${bugzillaKey}${searchConstraintQueryFragment}`;
     let openResults = await helpers.bugzillaRetry(openApiQuery);
     let resolvedResults = await helpers.bugzillaRetry(resolvedApiQuery);
-    openResults = openResults.bugs.filter(helpers.isNotQABugzilla);
-    resolvedResults = resolvedResults.bugs.filter(helpers.isNotQABugzilla);
-    const openMobileResults = openResults.filter(helpers.isMobileBugzilla);
-    const resolvedMobileResults = resolvedResults.filter(helpers.isMobileBugzilla);
+    openResults = openResults.bugs.filter(helpers.isNotQA);
+    resolvedResults = resolvedResults.bugs.filter(helpers.isNotQA);
+    const openMobileResults = openResults.filter(helpers.isMobile);
+    const resolvedMobileResults = resolvedResults.filter(helpers.isMobile);
+    const openDesktopResults = openResults.filter(helpers.isDesktop);
+    const resolvedDesktopResults = resolvedResults.filter(helpers.isDesktop);
     const results = openResults.concat(resolvedResults);
     const resultsMobile = openMobileResults.concat(resolvedMobileResults);
+    const resultsDesktop = openDesktopResults.concat(resolvedDesktopResults);
     return {
         bugzillaResult: `=HYPERLINK("${openQuery}"; ${results.length})`,
         bugzillaMobileResult: `=HYPERLINK("${openMobileQuery}"; ${resultsMobile.length})`,
+        bugzillaDesktopResult: `=HYPERLINK("${openDesktopQuery}"; ${resultsDesktop.length})`,
     }
 }
 
@@ -202,18 +223,22 @@ const getWebcompat = async (website, githubKey, minDate, maxDate) => {
     const filteredResults = results.filter(bug => [3, 4, 5, 6].includes(bug.milestone.number))
         // filter out any bugs with an sci-exclude label or filed by SoftVision
         .filter(bug => bug.labels.every(label => label.name !== "sci-exclude"))
-        .filter(bug => helpers.isNotQAWebCompat(bug));
+        .filter(bug => helpers.isNotQA(bug));
     const filteredCriticals = criticals.filter(bug => [3, 4, 5, 6].includes(bug.milestone.number))
         // filter out any bugs with an sci-exclude label or filed by SoftVision
         .filter(bug => bug.labels.every(label => label.name !== "sci-exclude"))
-        .filter(bug => helpers.isNotQAWebCompat(bug));
-    const filteredMobileResults = filteredResults.filter(helpers.isMobileWebCompat);
-    const filteredMobileCriticalResults = filteredCriticals.filter(helpers.isMobileWebCompat);
+        .filter(bug => helpers.isNotQA(bug));
+    const filteredMobileResults = filteredResults.filter(helpers.isMobile);
+    const filteredDesktopResults = filteredResults.filter(helpers.isDesktop);
+    const filteredMobileCriticalResults = filteredCriticals.filter(helpers.isMobile);
+    const filteredDesktopCriticalResults = filteredCriticals.filter(helpers.isDesktop);
     return {
         webcompatResult: `=HYPERLINK("${webcompatQuery}"; ${filteredResults.length})`,
         criticalsResult: `=HYPERLINK("${criticalsQuery}"; ${filteredCriticals.length})`,
         webcompatMobileResult: `=HYPERLINK("${webcompatQuery}"; ${filteredMobileResults.length})`,
         criticalsMobileResult: `=HYPERLINK("${criticalsQuery}"; ${filteredMobileCriticalResults.length})`,
+        webcompatDesktopResult: `=HYPERLINK("${webcompatQuery}"; ${filteredDesktopResults.length})`,
+        criticalsDesktopResult: `=HYPERLINK("${criticalsQuery}"; ${filteredDesktopCriticalResults.length})`,
     };
 }
 
@@ -317,10 +342,14 @@ const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) 
 
     const dupedGhIds = new Set();
     const dupedMobileGhIds = new Set();
+    const dupedDesktopGhIds = new Set();
     const dupedBzIds = new Set();
     const dupedMobileBzIds = new Set();
+    const dupedDesktopBzIds = new Set();
     const octokit = getOctokitInstance(githubKey);
     for (const [ query, ghToBzMap ] of searches) {
+        // TODO: this is broken, the API changed on us.
+        // See https://github.com/mozilla/tsci/issues/83
         const milestoneSearch = `https://api.github.com/search/issues?q=${query}`;
         const results = await getAllGitHubResultsFor(octokit.request, {url: milestoneSearch});
         for (const item of results) {
@@ -328,27 +357,35 @@ const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) 
             if (bzId && item.milestone.title === "duplicate") {
                 dupedBzIds.add(bzId);
                 dupedGhIds.add(item.number);
-                if (helpers.isMobileWebCompat(item)) {
+                if (helpers.isMobile(item)) {
                     dupedMobileBzIds.add(bzId);
                     dupedMobileGhIds.add(item.number);
+                }
+                if (helpers.isDesktop(item)) {
+                    dupedDesktopBzIds.add(bzId);
+                    dupedDesktopGhIds.add(item.number);
                 }
             }
         }
     }
 
+    const getBzLink = (param) => `https://bugzilla.mozilla.org/buglist.cgi?o1=anyexact&v1=${param}&f1=bug_id`;
     let param = "";
     for (const id of dupedBzIds) {
         param += "%2C" + id;
     }
-    const bzLink = `https://bugzilla.mozilla.org/buglist.cgi?o1=anyexact&v1=${param}&f1=bug_id`;
     let mobileParam = "";
     for (const id of dupedMobileBzIds) {
         mobileParam += "%2C" + id;
     }
-    const bzMobileLink = `https://bugzilla.mozilla.org/buglist.cgi?o1=anyexact&v1=${mobileParam}&f1=bug_id`;
+    let desktopParam = "";
+    for (const id of dupedDesktopBzIds) {
+        desktopParam += "%2C" + id;
+    }
     return {
-        duplicatesResult: dupedGhIds.size ? `=HYPERLINK("${bzLink}"; ${dupedGhIds.size})`: 0,
-        duplicatesMobileResult: dupedMobileGhIds.size ? `=HYPERLINK("${bzMobileLink}"; ${dupedMobileGhIds.size})` : 0,
+        duplicatesResult: dupedGhIds.size ? `=HYPERLINK("${getBzLink(param)}"; ${dupedGhIds.size})`: 0,
+        duplicatesMobileResult: dupedMobileGhIds.size ? `=HYPERLINK("${getBzLink(mobileParam)}"; ${dupedMobileGhIds.size})` : 0,
+        duplicatesDesktopResult: dupedDesktopGhIds.size ? `=HYPERLINK("${getBzLink(desktopParam)}"; ${dupedDesktopGhIds.size})` : 0,
     };
 }
 

@@ -13,7 +13,7 @@
     "softvision-sergiulogigan",
     "cipriansv"
   ],
-  "ignoredQADomain": "@softvision.ro",
+  "ignoredQADomain": "@softvision",
   "maxDate": null,
   "minDate": "2018",
   "spreadsheetId": null,

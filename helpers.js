@@ -69,6 +69,13 @@ function getBugzillaProducts() {
 }
 
 /**
+ * Returns a the relevant Bugzilla params for finding a bug by URL
+ */
+function getBugURL(url) {
+    return `&bug_file_loc_type=regexp&bug_file_loc=${formatWebSiteForRegExp(url)}`;
+}
+
+/**
  * Returns a URL encoded string containing the Buzilla statuses (as GET params)
  */
 function getBugzillaStatuses() {
@@ -94,45 +101,42 @@ function getBugzillaPriorities() {
 }
 
 /**
- * Returns true if the Bugzilla bug is considered to be Mobile (or Core)
+ * Returns true if the bug is considered to be Mobile (for Bugzilla or webcompat.com)
  */
-function isMobileBugzilla(bug) {
+function isMobile(bug) {
     const mobileProducts = ['Core', 'Firefox for Android', 'Fenix', 'GeckoView'];
-    return mobileProducts.includes(bug.product) ||
-        bug.product === "Web Compatibility" && bug.component === "Mobile";
-}
-
-/**
- * Returns true if the webcompat.com bug is considered to be Mobile
- */
-function isMobileWebCompat(bug) {
     const mobileLabels = ['browser-fenix', 'browser-firefox-mobile', 'browser-focus-geckoview', 'browser-geckoview'];
-    return bug.labels.some(label => mobileLabels.includes(label.name));
+    return bug.product ? (mobileProducts.includes(bug.product) || bug.product === "Web Compatibility" && bug.component === "Mobile") :
+        bug.labels.some(label => mobileLabels.includes(label.name));
 }
 
 /**
-* Returns true if the webcompat.com bug was reported by QA
-*/
-function isNotQAWebCompat(bug) {
-    return !config.ignoredGitHubAccounts.includes(bug.user.login);
+ * Returns true if the bug is considered to be Desktop (for Bugzilla or webcompat.com)
+ */
+function isDesktop(bug) {
+    const desktopProducts = ['Core', 'Firefox'];
+    const desktopLabels = ['browser-firefox'];
+    return bug.product ? (desktopProducts.includes(bug.product) || bug.product === "Web Compatibility" && bug.component === "Desktop") :
+        bug.labels.some(label => desktopLabels.includes(label.name));
 }
 
 /**
-* Returns true if the Bugzilla bug was reported by QA
+* Returns true if the bug was not reported by QA
 */
-function isNotQABugzilla(bug) {
-    return !bug.creator.includes(config.ignoredQADomain);
+function isNotQA(bug) {
+    return !(bug.creator ? bug.creator.includes(config.ignoredQADomain) :
+        config.ignoredGitHubAccounts.includes(bug.user.login));
 }
 
 module.exports = {
     bugzillaRetry,
     formatDateForAPIQueries,
     formatWebSiteForRegExp,
+    getBugURL,
     getBugzillaPriorities,
     getBugzillaProducts,
     getBugzillaStatuses,
-    isMobileBugzilla,
-    isMobileWebCompat,
-    isNotQABugzilla,
-    isNotQAWebCompat,
+    isMobile,
+    isDesktop,
+    isNotQA,
 }
