@@ -138,7 +138,7 @@ const getOctokitInstance = (function() {
         if (!singletons.has(githubKey)) {
             singletons.set(githubKey, new Octokit({
                 auth: `token ${githubKey}`,
-                userAgent: 'past/tsci',
+                userAgent: 'mozilla/tsci',
                 throttle: {
                     onRateLimit: (retryAfter, options) => {
                         console.warn(`Request quota exhausted for request to ${options.url}`)
