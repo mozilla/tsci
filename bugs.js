@@ -319,27 +319,6 @@ const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) 
         }
     }
 
-    // GitHub search queries (q parameter) cannot be too long, so do >1 requests.
-    const searches = [];
-    const baseSearchQuery = "is%3Aissue+milestone%3Aduplicate+repo%3Awebcompat%2Fweb-bugs%2F";
-    let searchQuery = baseSearchQuery;
-    let searchMapGhToBz = new Map();
-    let i = 0;
-    while (i < githubCandidates.length) {
-        const [ githubId, bzId ] = githubCandidates[i];
-        i++;
-        if (searchQuery.length + 1 + githubId.length > 256) {
-            searches.push([searchQuery, searchMapGhToBz]);
-            searchQuery = baseSearchQuery;
-            searchMapGhToBz = new Map();
-        }
-        searchQuery += "+" + githubId;
-        searchMapGhToBz.set(parseInt(githubId), bzId);
-    }
-    if (searchQuery !== baseSearchQuery) {
-      searches.push([searchQuery, searchMapGhToBz]);
-    }
-
     const dupedGhIds = new Set();
     const dupedMobileGhIds = new Set();
     const dupedDesktopGhIds = new Set();
@@ -347,28 +326,23 @@ const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) 
     const dupedMobileBzIds = new Set();
     const dupedDesktopBzIds = new Set();
     const octokit = getOctokitInstance(githubKey);
-    for (const [ query, ghToBzMap ] of searches) {
-        // TODO: this is broken, the API changed on us.
-        // See https://github.com/mozilla/tsci/issues/83
-        const milestoneSearch = `https://api.github.com/search/issues?q=${query}`;
-        const results = await getAllGitHubResultsFor(octokit.request, {url: milestoneSearch});
-        for (const item of results) {
-            const bzId = ghToBzMap.get(item.number);
-            if (bzId && item.milestone.title === "duplicate") {
-                dupedBzIds.add(bzId);
-                dupedGhIds.add(item.number);
-                if (helpers.isMobile(item)) {
-                    dupedMobileBzIds.add(bzId);
-                    dupedMobileGhIds.add(item.number);
-                }
-                if (helpers.isDesktop(item)) {
-                    dupedDesktopBzIds.add(bzId);
-                    dupedDesktopGhIds.add(item.number);
-                }
+    for (const [ issue, bzId ] of githubCandidates) {
+        const result = await octokit.issues.get(
+           {owner: "webcompat", repo: "web-bugs", issue_number: issue}
+        );
+        if (result.data.milestone.title === "duplicate") {
+            dupedBzIds.add(bzId);
+            dupedGhIds.add(result.data.number);
+            if (helpers.isMobile(result.data)) {
+                dupedMobileBzIds.add(bzId);
+                dupedMobileGhIds.add(result.data.number);
+            }
+            if (helpers.isDesktop(result.data)) {
+                dupedDesktopBzIds.add(bzId);
+                dupedDesktopGhIds.add(result.data.number);
             }
         }
     }
-
     const getBzLink = (param) => `https://bugzilla.mozilla.org/buglist.cgi?o1=anyexact&v1=${param}&f1=bug_id`;
     let param = "";
     for (const id of dupedBzIds) {
@@ -382,6 +356,8 @@ const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) 
     for (const id of dupedDesktopBzIds) {
         desktopParam += "%2C" + id;
     }
+
+    console.log(`${getBzLink(param)}`);
     return {
         duplicatesResult: dupedGhIds.size ? `=HYPERLINK("${getBzLink(param)}"; ${dupedGhIds.size})`: 0,
         duplicatesMobileResult: dupedMobileGhIds.size ? `=HYPERLINK("${getBzLink(mobileParam)}"; ${dupedMobileGhIds.size})` : 0,
