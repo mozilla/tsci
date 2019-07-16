@@ -101,6 +101,15 @@ function getBugzillaPriorities() {
 }
 
 /**
+* Returns a Bugzilla URL containing Bugs contained in the dupeSet
+* @param {Set} dupeSet
+*/
+function getBzLink(dupeSet) {
+    const param = Array.from(dupeSet).join("%2C");
+    return `https://bugzilla.mozilla.org/buglist.cgi?o1=anyexact&v1=${param}&f1=bug_id`;
+}
+
+/**
  * Returns true if the bug is considered to be Mobile (for Bugzilla or webcompat.com)
  */
 function isMobile(bug) {
@@ -136,6 +145,7 @@ module.exports = {
     getBugzillaPriorities,
     getBugzillaProducts,
     getBugzillaStatuses,
+    getBzLink,
     isMobile,
     isDesktop,
     isNotQA,
