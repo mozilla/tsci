@@ -1,6 +1,8 @@
 const fs = require('fs');
 const readline = require('readline');
 
+const valueInputOption = 'USER_ENTERED';
+
 async function createSpreadsheet(sheets, title) {
     const resource = {
         properties: {
@@ -12,6 +14,11 @@ async function createSpreadsheet(sheets, title) {
     const sheetId = data.sheets[0].properties.sheetId;
     // For new spreadsheets, the first sheet is always Summary
     const sheetTitle = "Summary";
+    const summaryHeaders = ["Date", "bugzilla", "bugzilla-M", "bugzilla-D", "wc",
+        "wc-M", "wc-D", "criticals", "criticals-M", "criticals-D", "duplicates",
+        "duplicates-M", "duplicates-D", "Non-weighted TSCI", "Non-weighted TSCI-M",
+        "Non-weighted TSCI-D", "TSCI", "TSCI-M", "TSCI-D",
+    ];
 
     // Fix sheet name.
     await sheets.spreadsheets.batchUpdate({
@@ -24,6 +31,38 @@ async function createSpreadsheet(sheets, title) {
                         title: sheetTitle,
                     },
                     "fields": "title",
+                },
+            }],
+        },
+    });
+
+    // Add headers for Summary.
+    await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `Summary!A1:S1`,
+        resource: {
+            values: [summaryHeaders],
+        },
+        valueInputOption,
+    });
+
+    // Center the cells
+    await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        resource: {
+            requests: [{
+                "repeatCell": {
+                    "range": {
+                        "sheetId": sheetId,
+                        "startRowIndex": 0,
+                        "endRowIndex": 1,
+                    },
+                    "cell": {
+                        "userEnteredFormat": {
+                            "horizontalAlignment" : "CENTER",
+                        },
+                    },
+                    "fields": "userEnteredFormat.horizontalAlignment",
                 },
             }],
         },
@@ -45,7 +84,6 @@ async function updateSummary(sheets, spreadsheetId, date) {
             continue;
         }
         sheetId = properties.sheetId;
-        const valueInputOption = 'USER_ENTERED';
         const requests = [];
         const range = {
             "sheetId": sheetId,
@@ -101,9 +139,6 @@ async function updateSummary(sheets, spreadsheetId, date) {
 
         console.log(`Updated summary sheet for date ${title}`);
         break;
-    }
-    if (!sheetId) {
-        console.error(`Couldn't find Summary sheet to update with data for ${title}`);
     }
 }
 
@@ -326,6 +361,7 @@ async function addStaticData(sheets, spreadsheetId, listSize, listFile = 'data/l
         "startColumnIndex": 0,
         "endColumnIndex": 2,
     };
+
     const headers = ['Rank', 'Website', 'bugzilla', 'bugzilla-M', 'bugzilla-D',
         'webcompat.com', 'webcompat-M', 'webcompat-D', 'criticals', 'criticals-M',
         'criticals-D', 'duplicates', 'duplicates-M', 'duplicates-D', 'critical weight',
