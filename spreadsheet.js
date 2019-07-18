@@ -51,7 +51,7 @@ async function updateSummary(sheets, spreadsheetId, date) {
             "startRowIndex": 1,
             "endRowIndex": 2,
             "startColumnIndex": 0,
-            "endColumnIndex": 12,
+            "endColumnIndex": 19,
         };
 
         // Insert new row.
