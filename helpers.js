@@ -115,7 +115,10 @@ function getBzLink(dupeSet) {
 function isMobile(bug) {
     const mobileProducts = ['Core', 'Firefox for Android', 'Fenix', 'GeckoView'];
     const mobileLabels = ['browser-fenix', 'browser-firefox-mobile', 'browser-focus-geckoview', 'browser-geckoview'];
-    return bug.product ? (mobileProducts.includes(bug.product) || bug.product === "Web Compatibility" && bug.component === "Mobile") :
+    const mobileOS = ['Android', 'All', 'Unspecified'];
+    return bug.product ?
+        ((mobileProducts.includes(bug.product) && mobileOS.includes(bug.op_sys)) ||
+         bug.product === "Web Compatibility" && bug.component === "Mobile") :
         bug.labels.some(label => mobileLabels.includes(label.name));
 }
 
@@ -125,7 +128,10 @@ function isMobile(bug) {
 function isDesktop(bug) {
     const desktopProducts = ['Core', 'Firefox'];
     const desktopLabels = ['browser-firefox'];
-    return bug.product ? (desktopProducts.includes(bug.product) || bug.product === "Web Compatibility" && bug.component === "Desktop") :
+    const desktopOS = ['Windows', 'Windows 7', 'Windows 8', 'Windows 8.1', 'Windows 10', 'macOS', 'Linux', 'All', 'Unspecified'];
+    return bug.product ?
+        ((desktopProducts.includes(bug.product) && desktopOS.includes(bug.op_sys)) ||
+         bug.product === "Web Compatibility" && bug.component === "Desktop") :
         bug.labels.some(label => desktopLabels.includes(label.name));
 }
 
