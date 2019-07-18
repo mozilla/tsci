@@ -1,7 +1,7 @@
 const fs = require('fs');
 const readline = require('readline');
 
-async function createSpreadsheet(sheets, title, maxDate) {
+async function createSpreadsheet(sheets, title) {
     const resource = {
         properties: {
             title,
@@ -10,8 +10,9 @@ async function createSpreadsheet(sheets, title, maxDate) {
     const { data } = await sheets.spreadsheets.create({ resource });
     const spreadsheetId = data.spreadsheetId;
     const sheetId = data.sheets[0].properties.sheetId;
-    // Construct the sheet title.
-    const sheetTitle = getSheetTitle(maxDate);
+    // For new spreadsheets, the first sheet is always Summary
+    const sheetTitle = "Summary";
+
     // Fix sheet name.
     await sheets.spreadsheets.batchUpdate({
         spreadsheetId,
