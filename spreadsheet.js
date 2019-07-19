@@ -1,7 +1,9 @@
 const fs = require('fs');
 const readline = require('readline');
 
-async function createSpreadsheet(sheets, title, maxDate) {
+const valueInputOption = 'USER_ENTERED';
+
+async function createSpreadsheet(sheets, title) {
     const resource = {
         properties: {
             title,
@@ -10,8 +12,14 @@ async function createSpreadsheet(sheets, title, maxDate) {
     const { data } = await sheets.spreadsheets.create({ resource });
     const spreadsheetId = data.spreadsheetId;
     const sheetId = data.sheets[0].properties.sheetId;
-    // Construct the sheet title.
-    const sheetTitle = getSheetTitle(maxDate);
+    // For new spreadsheets, the first sheet is always Summary
+    const sheetTitle = "Summary";
+    const summaryHeaders = ["Date", "bugzilla", "bugzilla-M", "bugzilla-D", "wc",
+        "wc-M", "wc-D", "criticals", "criticals-M", "criticals-D", "duplicates",
+        "duplicates-M", "duplicates-D", "Non-weighted TSCI", "Non-weighted TSCI-M",
+        "Non-weighted TSCI-D", "TSCI", "TSCI-M", "TSCI-D",
+    ];
+
     // Fix sheet name.
     await sheets.spreadsheets.batchUpdate({
         spreadsheetId,
@@ -23,6 +31,38 @@ async function createSpreadsheet(sheets, title, maxDate) {
                         title: sheetTitle,
                     },
                     "fields": "title",
+                },
+            }],
+        },
+    });
+
+    // Add headers for Summary.
+    await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `Summary!A1:S1`,
+        resource: {
+            values: [summaryHeaders],
+        },
+        valueInputOption,
+    });
+
+    // Center the cells
+    await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        resource: {
+            requests: [{
+                "repeatCell": {
+                    "range": {
+                        "sheetId": sheetId,
+                        "startRowIndex": 0,
+                        "endRowIndex": 1,
+                    },
+                    "cell": {
+                        "userEnteredFormat": {
+                            "horizontalAlignment" : "CENTER",
+                        },
+                    },
+                    "fields": "userEnteredFormat.horizontalAlignment",
                 },
             }],
         },
@@ -44,7 +84,6 @@ async function updateSummary(sheets, spreadsheetId, date) {
             continue;
         }
         sheetId = properties.sheetId;
-        const valueInputOption = 'USER_ENTERED';
         const requests = [];
         const range = {
             "sheetId": sheetId,
@@ -98,11 +137,34 @@ async function updateSummary(sheets, spreadsheetId, date) {
             valueInputOption,
         });
 
+        // format the first column as a date
+        await sheets.spreadsheets.batchUpdate({
+            spreadsheetId,
+            resource: {
+                requests: [{
+                    "repeatCell": {
+                        "range": {
+                            "sheetId": sheetId,
+                            "startColumnIndex": 0,
+                            "endColumnIndex": 1,
+                            "startRowIndex": 1,
+                        },
+                        "cell": {
+                            "userEnteredFormat": {
+                                "numberFormat": {
+                                    "type": "DATE",
+                                    "pattern": "yyyy/mm/dd",
+                                },
+                            },
+                        },
+                        "fields": "userEnteredFormat.numberFormat",
+                    },
+                }],
+            },
+        });
+
         console.log(`Updated summary sheet for date ${title}`);
         break;
-    }
-    if (!sheetId) {
-        console.error(`Couldn't find Summary sheet to update with data for ${title}`);
     }
 }
 
@@ -325,6 +387,7 @@ async function addStaticData(sheets, spreadsheetId, listSize, listFile = 'data/l
         "startColumnIndex": 0,
         "endColumnIndex": 2,
     };
+
     const headers = ['Rank', 'Website', 'bugzilla', 'bugzilla-M', 'bugzilla-D',
         'webcompat.com', 'webcompat-M', 'webcompat-D', 'criticals', 'criticals-M',
         'criticals-D', 'duplicates', 'duplicates-M', 'duplicates-D', 'critical weight',
