@@ -137,6 +137,31 @@ async function updateSummary(sheets, spreadsheetId, date) {
             valueInputOption,
         });
 
+        // format the first column as a date
+        await sheets.spreadsheets.batchUpdate({
+            spreadsheetId,
+            resource: {
+                requests: [{
+                    "repeatCell": {
+                        "range": {
+                            "sheetId": sheetId,
+                            "startColumnIndex": 0,
+                            "endColumnIndex": 1,
+                            "startRowIndex": 1,
+                        },
+                        "cell": {
+                            "userEnteredFormat": {
+                                "numberFormat": {
+                                    "type": "DATE",
+                                },
+                            },
+                        },
+                        "fields": "userEnteredFormat.numberFormat",
+                    },
+                }],
+            },
+        });
+
         console.log(`Updated summary sheet for date ${title}`);
         break;
     }
