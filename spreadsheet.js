@@ -153,6 +153,7 @@ async function updateSummary(sheets, spreadsheetId, date) {
                             "userEnteredFormat": {
                                 "numberFormat": {
                                     "type": "DATE",
+                                    "pattern": "yyyy/mm/dd",
                                 },
                             },
                         },
