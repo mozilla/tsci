@@ -143,6 +143,16 @@ function isNotQA(bug) {
         config.ignoredGitHubAccounts.includes(bug.user.login));
 }
 
+/**
+* Returns true if the bug does not have a webcompat.com or web-bugs URL in the
+* see also field.
+*/
+function filterWebCompatSeeAlso(bug) {
+    const seeAlsoArray = bug.see_also;
+    const webCompatRegexp = /(webcompat\.com|web-bugs)/i;
+    return !seeAlsoArray.some(url => webCompatRegexp.test(url));
+}
+
 module.exports = {
     bugzillaRetry,
     formatDateForAPIQueries,
@@ -152,6 +162,7 @@ module.exports = {
     getBugzillaProducts,
     getBugzillaStatuses,
     getBzLink,
+    filterWebCompatSeeAlso,
     isMobile,
     isDesktop,
     isNotQA,
