@@ -3,6 +3,8 @@ const tranco = require('./tranco');
 const spreadsheet = require('./spreadsheet');
 const bugs = require('./bugs');
 
+const argv = process.argv.slice(2);
+
 /**
  * Return the End of the week the specified date belongs to.
  * @param {Date} date the date for which to
@@ -31,7 +33,7 @@ const main = async () => {
         throw new Error("Wrong minDate format: use yyyy-mm-dd");
     }
 
-    const inputDate = process.argv[2] || maxDate;
+    const inputDate = process.argv[0] || maxDate;
     if (inputDate) {
         // We want to consider open bugs only until the end of the given week.
         const parsed = new Date(inputDate);
