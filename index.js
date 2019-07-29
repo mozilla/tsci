@@ -1,18 +1,10 @@
 const { google } = require('googleapis');
-const tranco = require('./tranco');
-const spreadsheet = require('./spreadsheet');
 const bugs = require('./bugs');
+const helpers = require('./helpers');
+const spreadsheet = require('./spreadsheet');
+const tranco = require('./tranco');
 
-/**
- * Return the End of the week the specified date belongs to.
- * @param {Date} date the date for which to
- * @returns the date of the end of the week
- */
-function getEOW(date) {
-    const param = new Date(date);
-    param.setDate(param.getDate() - param.getDay() + 7);
-    return new Date(param - 1);
-}
+const argv = process.argv.slice(2);
 
 const main = async () => {
     const config = require('./config.json');
@@ -21,53 +13,21 @@ const main = async () => {
     const bugzillaKey = config.bugzillaKey || '';
     const githubKey = config.githubKey || '';
     const writers = config.writers || ['user@example.com'];
-    const queryDates = [];
     const maxDate = config.maxDate || undefined;
     const minDate = config.minDate || "2018";
     let id = config.spreadsheetId;
+    let queryDates = [];
 
     const parsedMinDate = new Date(minDate);
     if (isNaN(parsedMinDate)) {
         throw new Error("Wrong minDate format: use yyyy-mm-dd");
     }
 
-    const inputDate = process.argv[2] || maxDate;
-    if (inputDate) {
-        // We want to consider open bugs only until the end of the given week.
-        const parsed = new Date(inputDate);
-        const today = new Date();
-        if (isNaN(parsed)) {
-            throw new Error("Wrong maxDate format: use yyyy-mm-dd");
-        }
-
-        if (!inputDate.includes("-")) {
-            // An entire year is specified.
-            for (let i = 0; i < 52; i++) {
-                queryDates.push(getEOW(parsed));
-                parsed.setDate(parsed.getDate() + 7);
-                if (getEOW(parsed) > today) {
-                    // Stop if we get into future dates (the Tranco list won't
-                    // have anything useful for us).
-                    break;
-                }
-            }
-        } else if (inputDate.indexOf("-") === inputDate.lastIndexOf("-")) {
-            // An entire month is specified.
-            const month = getEOW(parsed).getMonth();
-            for (let i = 0; i < 5; i++) {
-                queryDates.push(getEOW(parsed));
-                parsed.setDate(parsed.getDate() + 7);
-                if (getEOW(parsed).getMonth() !== month || getEOW(parsed) > today) {
-                    // Stop if the fifth consecutive Sunday falls into the next
-                    // month, or we get into future dates.
-                    break;
-                }
-            }
-        } else {
-            queryDates.push(getEOW(parsed));
-        }
+    const inputDate = argv[0] || maxDate;
+    if (argv.includes("--resume")) {
+        queryDates = helpers.resumeQueryDates(inputDate);
     } else {
-        queryDates.push(inputDate);
+        queryDates = helpers.getQueryDates(inputDate);
     }
 
     for (const date of queryDates) {

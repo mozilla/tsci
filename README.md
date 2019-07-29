@@ -67,6 +67,12 @@ and including Saturday May 25 2018:
 npm start 2019-05-23
 ```
 
+A `--resume` option also exists, to continue collecting weekly results until the present date, rather than just a single weekly result:
+
+```
+npm start 2019-05-23 -- --resume
+```
+
 Code of Conduct
 ===============
 
