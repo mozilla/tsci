@@ -16,24 +16,13 @@ function getEOW(date) {
     return new Date(param - 1);
 }
 
-const main = async () => {
-    const config = require('./config.json');
-    const LIST_SIZE = config.listSize || 500;
-    const LIST_DIR = config.listDir || 'data/';
-    const bugzillaKey = config.bugzillaKey || '';
-    const githubKey = config.githubKey || '';
-    const writers = config.writers || ['user@example.com'];
+/**
+ * Return the list of query dates for a given inputDate
+ * @param {Date} inputDate the date to start with.
+ * @returns an Array with all dates to gather bugs for
+ */
+function getQueryDates(inputDate) {
     const queryDates = [];
-    const maxDate = config.maxDate || undefined;
-    const minDate = config.minDate || "2018";
-    let id = config.spreadsheetId;
-
-    const parsedMinDate = new Date(minDate);
-    if (isNaN(parsedMinDate)) {
-        throw new Error("Wrong minDate format: use yyyy-mm-dd");
-    }
-
-    const inputDate = process.argv[0] || maxDate;
     if (inputDate) {
         // We want to consider open bugs only until the end of the given week.
         const parsed = new Date(inputDate);
@@ -66,10 +55,59 @@ const main = async () => {
                 }
             }
         } else {
+            // A single date is specified.
             queryDates.push(getEOW(parsed));
         }
     } else {
         queryDates.push(inputDate);
+    }
+
+    return queryDates;
+}
+
+/**
+ * Return the list of query dates until the present, starting
+ * at the specified date.
+ * @param {Date} inputDate the date to resume with
+ * @returns an Array with all dates to gather bugs for
+ */
+function resumeQueryDates(inputDate) {
+    const queryDates = [];
+    const parsed = new Date(inputDate);
+    const today = new Date();
+    if (isNaN(parsed)) {
+        throw new Error("Wrong maxDate format: use yyyy-mm-dd");
+    }
+    while(getEOW(parsed) < today) {
+        queryDates.push(getEOW(parsed));
+        parsed.setDate(parsed.getDate() + 7);
+    }
+
+    return queryDates;
+}
+
+const main = async () => {
+    const config = require('./config.json');
+    const LIST_SIZE = config.listSize || 500;
+    const LIST_DIR = config.listDir || 'data/';
+    const bugzillaKey = config.bugzillaKey || '';
+    const githubKey = config.githubKey || '';
+    const writers = config.writers || ['user@example.com'];
+    const maxDate = config.maxDate || undefined;
+    const minDate = config.minDate || "2018";
+    let id = config.spreadsheetId;
+    let queryDates = [];
+
+    const parsedMinDate = new Date(minDate);
+    if (isNaN(parsedMinDate)) {
+        throw new Error("Wrong minDate format: use yyyy-mm-dd");
+    }
+
+    const inputDate = argv[0] || maxDate;
+    if (argv.includes("--resume")) {
+        queryDates = resumeQueryDates(inputDate);
+    } else {
+        queryDates = getQueryDates(inputDate);
     }
 
     for (const date of queryDates) {
