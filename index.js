@@ -35,6 +35,7 @@ const main = async () => {
     if (inputDate) {
         // We want to consider open bugs only until the end of the given week.
         const parsed = new Date(inputDate);
+        const today = new Date();
         if (isNaN(parsed)) {
             throw new Error("Wrong maxDate format: use yyyy-mm-dd");
         }
@@ -44,6 +45,11 @@ const main = async () => {
             for (let i = 0; i < 52; i++) {
                 queryDates.push(getEOW(parsed));
                 parsed.setDate(parsed.getDate() + 7);
+                if (getEOW(parsed) > today) {
+                    // Stop if we get into future dates (the Tranco list won't
+                    // have anything useful for us).
+                    break;
+                }
             }
         } else if (inputDate.indexOf("-") === inputDate.lastIndexOf("-")) {
             // An entire month is specified.
@@ -51,9 +57,9 @@ const main = async () => {
             for (let i = 0; i < 5; i++) {
                 queryDates.push(getEOW(parsed));
                 parsed.setDate(parsed.getDate() + 7);
-                if (getEOW(parsed).getMonth() !== month) {
+                if (getEOW(parsed).getMonth() !== month || getEOW(parsed) > today) {
                     // Stop if the fifth consecutive Sunday falls into the next
-                    // month.
+                    // month, or we get into future dates.
                     break;
                 }
             }
