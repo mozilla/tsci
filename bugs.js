@@ -19,7 +19,7 @@ const searchConstraintQueryFragment = "&keywords_type=nowords&keywords=meta%2C%2
  * @returns a Map of String keys to arrays of Strings that represent spreadsheet
  *          column data
  */
-const fetchBugs = async (listFile = 'data/list.csv', bugzillaKey, githubKey, minDate, maxDate) => {
+const fetchBugs = async (listFile = 'data/list.csv', bugzillaKey, githubKey, minDate, maxDate, includeFenix) => {
     const currentLine = ((i = 0) => () => ++i)();
     const bugzilla = [];
     const bugzillaMobile = [];
@@ -61,7 +61,7 @@ const fetchBugs = async (listFile = 'data/list.csv', bugzillaKey, githubKey, min
             bugzillaResult,
             bugzillaMobileResult,
             bugzillaDesktopResult,
-        } = await getBugzilla(website, bugzillaKey, minDate, maxDate);
+        } = await getBugzilla(website, bugzillaKey, minDate, maxDate, includeFenix);
         bugzilla.push(bugzillaResult);
         bugzillaMobile.push(bugzillaMobileResult);
         bugzillaDesktop.push(bugzillaDesktopResult);
@@ -80,7 +80,7 @@ const fetchBugs = async (listFile = 'data/list.csv', bugzillaKey, githubKey, min
             criticalsMobileResult,
             webcompatDesktopResult,
             criticalsDesktopResult,
-        } = await getWebcompat(website, githubKey, minDate, maxDate);
+        } = await getWebcompat(website, githubKey, minDate, maxDate, includeFenix);
         webcompat.push(webcompatResult);
         criticals.push(criticalsResult);
         webcompatMobile.push(webcompatMobileResult);
@@ -100,13 +100,14 @@ const fetchBugs = async (listFile = 'data/list.csv', bugzillaKey, githubKey, min
  * @param {Date} maxDate
  */
 
-const getBugzilla = async (website, bugzillaKey, minDate, maxDate = new Date()) => {
+const getBugzilla = async (website, bugzillaKey, minDate, maxDate = new Date(), includeFenix) => {
     const minDateQuery = helpers.formatDateForAPIQueries(minDate);
     const maxDateQuery = helpers.formatDateForAPIQueries(maxDate);
     const maxDateQueryFragment = (num) => `&f${num}=creation_ts&o${num}=lessthaneq&v${num}=${helpers.formatDateForAPIQueries(maxDate)}`;
     const notSeeAlsoQueryFragment = (num) => `&f${num}=CP&f${num + 1}=see_also&o${num + 1}=notsubstring&v${num + 1}=webcompat.com&f${num + 2}=see_also&o${num + 2}=notsubstring&v${num + 2}=web-bugs`;
     const openQuery = `https://bugzilla.mozilla.org/buglist.cgi?query_format=advanced&f1=OP${helpers.getBugzillaPriorities()}${helpers.getBugURL(website)}&o2=greaterthaneq&list_id=14636479&v2=${minDateQuery}&resolution=---&f2=creation_ts${helpers.getBugzillaStatuses()}${helpers.getBugzillaProducts()}${maxDateQueryFragment(3)}${searchConstraintQueryFragment}${notSeeAlsoQueryFragment(4)}`;
-    const openMobileQuery = `https://bugzilla.mozilla.org/buglist.cgi?query_format=advanced&f1=OP${helpers.getBugzillaPriorities()}${helpers.getBugURL(website)}&f2=creation_ts&o2=greaterthaneq&v2=${minDateQuery}&resolution=---${helpers.getBugzillaStatuses()}${maxDateQueryFragment(3)}${searchConstraintQueryFragment}&j4=OR&f4=OP&f5=product&o5=equals&v5=Core&f6=product&o6=equals&v6=Fenix&f7=product&o7=equals&v7=Firefox%20for%20Android&f8=product&o8=equals&v8=GeckoView&f9=OP&f10=product&o10=equals&v10=Web%20Compatibility&f11=component&o11=equals&v11=Mobile&f12=CP&op_sys=Unspecified&op_sys=All&op_sys=Android${notSeeAlsoQueryFragment(13)}`;
+    const FenixQueryPart = includeFenix ? "&f6=product&o6=equals&v6=Fenix&f8=product&o8=equals&v8=GeckoView" : "";
+    const openMobileQuery = `https://bugzilla.mozilla.org/buglist.cgi?query_format=advanced&f1=OP${helpers.getBugzillaPriorities()}${helpers.getBugURL(website)}&f2=creation_ts&o2=greaterthaneq&v2=${minDateQuery}&resolution=---${helpers.getBugzillaStatuses()}${maxDateQueryFragment(3)}${searchConstraintQueryFragment}&j4=OR&f4=OP&f5=product&o5=equals&v5=Core${FenixQueryPart}f9=OP&f10=product&o10=equals&v10=Web%20Compatibility&f11=component&o11=equals&v11=Mobile&f12=CP&op_sys=Unspecified&op_sys=All&op_sys=Android${notSeeAlsoQueryFragment(13)}`;
     const openDesktopQuery = `https://bugzilla.mozilla.org/buglist.cgi?query_format=advanced&f1=OP${helpers.getBugzillaPriorities()}${helpers.getBugURL(website)}&f2=creation_ts&o2=greaterthaneq&v2=${minDateQuery}&resolution=---${helpers.getBugzillaStatuses()}${maxDateQueryFragment(3)}${searchConstraintQueryFragment}&o5=equals&o9=equals&v5=Core&f12=CP&v9=Desktop&j4=OR&f10=CP&v6=Firefox&f8=product&o6=equals&f9=component&f4=OP&f5=product&v8=Web%20Compatibility&f6=product&f7=OP&o8=equals&op_sys=Unspecified&op_sys=All&op_sys=Windows&op_sys=Windows%207&op_sys=Windows%208&op_sys=Windows%208.1&op_sys=Windows%2010&op_sys=macOS&op_sys=Linux${notSeeAlsoQueryFragment(13)}`;
     const openApiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=see_also,id,summary,status,priority,product,component,creator,op_sys${helpers.getBugzillaPriorities()}${helpers.getBugURL(website)}${helpers.getBugzillaStatuses()}&f1=OP&f3=creation_ts&o3=greaterthaneq${helpers.getBugzillaProducts()}&resolution=---&v3=${minDateQuery}&api_key=${bugzillaKey}${maxDateQueryFragment(4)}${searchConstraintQueryFragment}`;
     const resolvedApiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=see_also,id,summary,status,priority,product,component,creator,op_sys${helpers.getBugzillaPriorities()}${helpers.getBugURL(website)}&chfield=bug_status&chfieldfrom=${maxDateQuery}&chfieldvalue=RESOLVED&f1=OP&f3=creation_ts&f4=creation_ts&o3=greaterthaneq&o4=lessthaneq${helpers.getBugzillaProducts()}&v3=${minDateQuery}&v4=${maxDateQuery}&api_key=${bugzillaKey}${searchConstraintQueryFragment}`;
@@ -197,7 +198,7 @@ async function getAllGitHubResultsFor(query, params = {}) {
  * @returns an Object with a webcompatResult and a criticalsResult properties
  *          that correspond to each query
  */
-const getWebcompat = async (website, githubKey, minDate, maxDate) => {
+const getWebcompat = async (website, githubKey, minDate, maxDate, includeFenix) => {
     const spaced = website.replace(/\./g, " ");
     let state = "+state:open"
     let date_range = "";
@@ -222,10 +223,14 @@ const getWebcompat = async (website, githubKey, minDate, maxDate) => {
     });
     // milestones: needsdiagnosis (3), needscontact (4), contactready (5), sitewait (6)
     const filteredResults = results.filter(bug => [3, 4, 5, 6].includes(bug.milestone.number))
+        // filter out any bugs without browser-firefox-mobile if not including Fenix
+        .filter(bug => includeFenix || bug.labels.map(label => label.name).includes("browser-firefox-mobile"))
         // filter out any bugs with an sci-exclude label or filed by SoftVision
         .filter(bug => bug.labels.every(label => label.name !== "sci-exclude"))
         .filter(bug => helpers.isNotQA(bug));
     const filteredCriticals = criticals.filter(bug => [3, 4, 5, 6].includes(bug.milestone.number))
+        // filter out any bugs without browser-firefox-mobile if not including Fenix
+        .filter(bug => includeFenix || bug.labels.map(label => label.name).includes("browser-firefox-mobile"))
         // filter out any bugs with an sci-exclude label or filed by SoftVision
         .filter(bug => bug.labels.every(label => label.name !== "sci-exclude"))
         .filter(bug => helpers.isNotQA(bug));

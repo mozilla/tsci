@@ -32,7 +32,7 @@ const main = async () => {
 
     for (const date of queryDates) {
         const LIST_FILE = await tranco.fetchList(LIST_SIZE, LIST_DIR, date);
-        const bugTable = await bugs.fetchBugs(LIST_FILE, bugzillaKey, githubKey, parsedMinDate, date);
+        const bugTable = await bugs.fetchBugs(LIST_FILE, bugzillaKey, githubKey, parsedMinDate, date, !config.ignoreFenix);
         if (bugTable.get("bugzilla").length + bugTable.get("webcompat").length === 0) {
                 console.warn("List was empty or malformed!");
                 continue;
