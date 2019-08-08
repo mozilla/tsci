@@ -14,6 +14,7 @@
     "cipriansv"
   ],
   "ignoredQADomain": "@softvision",
+  "ignoreFenix": true,
   "maxDate": null,
   "minDate": "2018",
   "spreadsheetId": null,
