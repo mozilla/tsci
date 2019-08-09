@@ -30,6 +30,8 @@ would look like:
     "github.io",
     "t.co"
   ],
+  // Whether we should ignore Fenix bugs (since it's pre-release)
+  "ignoreFenix": true,
   // A list of GitHub accounts to ignore bugs from (QA)
   "ignoredGitHubAccounts": [
     "softvision-oana-arbuzov",
