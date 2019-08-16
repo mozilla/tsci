@@ -350,9 +350,9 @@ const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) 
         }
     }
     return {
-        duplicatesResult: dupedGhIds.size ? `=HYPERLINK("${helpers.getBzLink(dupedBzIds)}"; ${dupedGhIds.size})`: 0,
-        duplicatesMobileResult: dupedMobileGhIds.size ? `=HYPERLINK("${helpers.getBzLink(dupedMobileBzIds)}"; ${dupedMobileGhIds.size})` : 0,
-        duplicatesDesktopResult: dupedDesktopGhIds.size ? `=HYPERLINK("${helpers.getBzLink(dupedDesktopBzIds)}"; ${dupedDesktopGhIds.size})` : 0,
+        duplicatesResult: dupedGhIds.size ? `=HYPERLINK("${helpers.getBzLink(dupedBzIds)}"; ${dupedGhIds.size / 10 + 0.9})`: 0,
+        duplicatesMobileResult: dupedMobileGhIds.size ? `=HYPERLINK("${helpers.getBzLink(dupedMobileBzIds)}"; ${dupedMobileGhIds.size / 10 + 0.9})` : 0,
+        duplicatesDesktopResult: dupedDesktopGhIds.size ? `=HYPERLINK("${helpers.getBzLink(dupedDesktopBzIds)}"; ${dupedDesktopGhIds.size / 10 + 0.9})` : 0,
     };
 }
 
