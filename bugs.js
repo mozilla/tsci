@@ -227,12 +227,14 @@ const getWebcompat = async (website, githubKey, minDate, maxDate, includeFenix) 
         .filter(bug => includeFenix || !bug.labels.some(label => label.name.includes("browser-fenix")))
         // filter out any bugs with an sci-exclude label or filed by SoftVision
         .filter(bug => bug.labels.every(label => label.name !== "sci-exclude"))
+        .filter(bug => bug.labels.every(label => label.name !== "severity-minor"))
         .filter(bug => helpers.isNotQA(bug));
     const filteredCriticals = criticals.filter(bug => [3, 4, 5, 6].includes(bug.milestone.number))
         // filter out any bugs with browser-fenix if not including Fenix
         .filter(bug => includeFenix || !bug.labels.some(label => label.name.includes("browser-fenix")))
         // filter out any bugs with an sci-exclude label or filed by SoftVision
         .filter(bug => bug.labels.every(label => label.name !== "sci-exclude"))
+        .filter(bug => bug.labels.every(label => label.name !== "severity-minor"))
         .filter(bug => helpers.isNotQA(bug));
     const filteredMobileResults = filteredResults.filter(helpers.isMobile);
     const filteredDesktopResults = filteredResults.filter(helpers.isDesktop);
