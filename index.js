@@ -26,6 +26,8 @@ const main = async () => {
     const inputDate = argv[0] || maxDate;
     if (argv.includes("--resume")) {
         queryDates = helpers.resumeQueryDates(inputDate);
+    } else if (argv.includes("--backfill")) {
+        queryDates = helpers.backfillQueryDates(inputDate);
     } else {
         queryDates = helpers.getQueryDates(inputDate);
     }

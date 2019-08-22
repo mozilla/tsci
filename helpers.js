@@ -214,6 +214,58 @@ function getQueryDates(inputDate) {
 }
 
 /**
+ * Return the list of query dates for a given inputDate, going backwards
+ * in time, until 2018-01-01
+ * @param {Date} inputDate the date to start with.
+ * @returns an Array with all dates to gather bugs for
+ */
+function backfillQueryDates(inputDate) {
+    const queryDates = [];
+    if (inputDate) {
+        // We want to consider open bugs only until the end of the given week.
+        const parsed = new Date(inputDate);
+        const epoch = new Date("2018-01-01");
+        if (isNaN(parsed)) {
+            throw new Error("Wrong maxDate format: use yyyy-mm-dd");
+        }
+
+        if (!inputDate.includes("-")) {
+            // An entire year is specified.
+            for (let i = 0; i < 52; i++) {
+                queryDates.push(getEOW(parsed));
+                parsed.setDate(parsed.getDate() - 7);
+                if (getEOW(parsed) < epoch) {
+                    break;
+                }
+            }
+        } else if (inputDate.indexOf("-") === inputDate.lastIndexOf("-")) {
+            // An entire month is specified.
+            const month = getEOW(parsed).getMonth();
+            for (let i = 0; i < 5; i++) {
+                queryDates.push(getEOW(parsed));
+                parsed.setDate(parsed.getDate() - 7);
+                if (getEOW(parsed).getMonth() !== month || getEOW(parsed) < epoch) {
+                    // Stop if the fifth consecutive Sunday falls into the next
+                    // month, or we get into future dates.
+                    break;
+                }
+            }
+        } else {
+            // A single date is specified. Just keep on going back until
+            // we hit the epoch.
+            while(getEOW(parsed) > epoch) {
+                queryDates.push(getEOW(parsed));
+                parsed.setDate(parsed.getDate() - 7);
+            }
+        }
+    } else {
+        queryDates.push(inputDate);
+    }
+
+    return queryDates;
+}
+
+/**
  * Return the list of query dates until the present, starting
  * at the specified date.
  * @param {Date} inputDate the date to resume with
@@ -235,6 +287,7 @@ function resumeQueryDates(inputDate) {
 }
 
 module.exports = {
+    backfillQueryDates,
     bugzillaRetry,
     formatDateForAPIQueries,
     formatWebSiteForRegExp,
