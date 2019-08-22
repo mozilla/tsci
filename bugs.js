@@ -306,10 +306,12 @@ function getSeeAlsoLinks(bug) {
  */
 const getDuplicates = async (website, bugzillaKey, githubKey, minDate, maxDate) => {
     const apiQuery = `https://bugzilla.mozilla.org/rest/bug?include_fields=id,creation_time,see_also,history,priority,product,component,creator,op_sys${helpers.getBugzillaPriorities()}&f1=see_also&f2=bug_status&f3=bug_file_loc&o1=anywordssubstr&o2=anywordssubstr&o3=regexp&v1=webcompat.com%2Cgithub.com%2Fwebcompat&v2=UNCONFIRMED%2CNEW%2CASSIGNED%2CREOPENED&v3=${helpers.formatWebSiteForRegExp(website)}&limit=0&api_key=${bugzillaKey}${searchConstraintQueryFragment}`
+    // filter out Bug 975444 (Google Tier 1), since it dominates everything
     const results = await helpers.bugzillaRetry(apiQuery);
+    const filteredResults = results.bugs.filter(item => item.id !== 975444);
     const githubCandidates = [];
     const regex = /\/(\d+)$/;
-    for (const bug of results.bugs) {
+    for (const bug of filteredResults) {
         const bzId = bug.id;
         const seeAlsos = getSeeAlsoLinks(bug);
         for (const [url, date] of seeAlsos.entries()) {
