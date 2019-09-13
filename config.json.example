@@ -6,6 +6,7 @@
   "ignoredDomains": [
     "github.com",
     "github.io",
+    "redd.it",
     "t.co"
   ],
   "ignoredGitHubAccounts": [
