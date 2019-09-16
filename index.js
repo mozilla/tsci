@@ -15,7 +15,8 @@ const main = async () => {
     const writers = config.writers || ['user@example.com'];
     const maxDate = config.maxDate || undefined;
     const minDate = config.minDate || "2018";
-    let id = config.spreadsheetId;
+    let configId = config.spreadsheetId;
+    let id = configId;
     let queryDates = [];
 
     const parsedMinDate = new Date(minDate);
@@ -46,14 +47,22 @@ const main = async () => {
         const docTitle = 'Top Site Compatibility Index';
         if (!id) {
             id = await spreadsheet.createSpreadsheet(sheets, docTitle, date);
+            configId = helpers.updateConfigId(id);
         }
+        // Create a clone of the document here so we can operate on that
+        // and only copy over the completed sheet.
+        id = await spreadsheet.cloneDocument(drive, id);
         const { sheetId, title } = await spreadsheet.findOrCreateSheet(sheets, id, date);
         await spreadsheet.addStaticData(sheets, id, LIST_SIZE, LIST_FILE, sheetId, title);
         await spreadsheet.addBugData(sheets, id, bugTable, title);
-        await spreadsheet.updateSummary(sheets, id, date);
+        await spreadsheet.copySheetToOriginal(sheets, id, configId);
+        // delete the clone, because we don't need it anymore.
+        await drive.files.delete({fileId: id});
+        await spreadsheet.updateSummary(sheets, configId, date);
+
         for (const writer of writers) {
-            await spreadsheet.shareSheet(drive, id, writer);
-            console.log(`► https://docs.google.com/spreadsheets/d/${id}/edit`)
+            await spreadsheet.shareSheet(drive, configId, writer);
+            console.log(`► https://docs.google.com/spreadsheets/d/${configId}/edit`)
         }
     }
 }
