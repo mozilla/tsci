@@ -648,9 +648,54 @@ function getSheetTitle(date) {
     return `${date.getFullYear()}/${(date.getMonth() + 1)}/${date.getDate()}`;
 }
 
+/**
+ * Copy a Google drive document for the given ID and return
+ * the ID of the copy.
+ */
+async function cloneDocument(drive, id) {
+    const copy = await drive.files.copy({fileId: id});
+    return copy.data.id;
+}
+
+/**
+ * Copy the last sheet from the cloned document back to the
+ * original.
+ */
+async function copySheetToOriginal(sheets, id, configId) {
+    let resp = await sheets.spreadsheets.get({spreadsheetId: id});
+    const newProperties  = resp.data.sheets[resp.data.sheets.length - 1].properties;
+    // Copy the sheet from our clone to our original sheet
+    await sheets.spreadsheets.sheets.copyTo({
+        spreadsheetId: id,
+        sheetId: newProperties.sheetId,
+        resource: {
+            destinationSpreadsheetId: configId,
+        },
+    });
+    resp = await sheets.spreadsheets.get({spreadsheetId: configId});
+    const origProperties = resp.data.sheets[resp.data.sheets.length - 1].properties;
+    // Update the sheet title (it will be "Copy of $DATE")
+    await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: configId,
+        resource: {
+            requests: [{
+                "updateSheetProperties": {
+                    "properties": {
+                        sheetId: origProperties.sheetId,
+                        title: newProperties.title,
+                    },
+                    "fields": "title",
+                },
+            }],
+        },
+    });
+}
+
 module.exports = {
     addBugData,
     addStaticData,
+    cloneDocument,
+    copySheetToOriginal,
     createSpreadsheet,
     findOrCreateSheet,
     shareSheet,
