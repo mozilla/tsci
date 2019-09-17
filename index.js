@@ -15,8 +15,8 @@ const main = async () => {
     const writers = config.writers || ['user@example.com'];
     const maxDate = config.maxDate || undefined;
     const minDate = config.minDate || "2018";
-    let configId = config.spreadsheetId;
-    let id = configId;
+    let originalId = config.spreadsheetId;
+    let cloneId;
     let queryDates = [];
 
     const parsedMinDate = new Date(minDate);
@@ -45,24 +45,23 @@ const main = async () => {
         const drive = google.drive({ version: 'v3', auth })
 
         const docTitle = 'Top Site Compatibility Index';
-        if (!id) {
-            id = await spreadsheet.createSpreadsheet(sheets, docTitle, date);
-            configId = helpers.updateConfigId(id);
+        if (!originalId) {
+            originalId = await spreadsheet.createSpreadsheet(sheets, docTitle, date);
         }
         // Create a clone of the document here so we can operate on that
         // and only copy over the completed sheet.
-        id = await spreadsheet.cloneDocument(drive, id);
-        const { sheetId, title } = await spreadsheet.findOrCreateSheet(sheets, id, date);
-        await spreadsheet.addStaticData(sheets, id, LIST_SIZE, LIST_FILE, sheetId, title);
-        await spreadsheet.addBugData(sheets, id, bugTable, title);
-        await spreadsheet.copySheetToOriginal(sheets, id, configId);
+        cloneId = await spreadsheet.cloneDocument(drive, originalId);
+        const { sheetId, title } = await spreadsheet.findOrCreateSheet(sheets, cloneId, date);
+        await spreadsheet.addStaticData(sheets, cloneId, LIST_SIZE, LIST_FILE, sheetId, title);
+        await spreadsheet.addBugData(sheets, cloneId, bugTable, title);
+        await spreadsheet.copySheetToOriginal(sheets, cloneId, originalId);
+        await spreadsheet.updateSummary(sheets, originalId, date);
         // delete the clone, because we don't need it anymore.
-        await drive.files.delete({fileId: id});
-        await spreadsheet.updateSummary(sheets, configId, date);
+        await drive.files.delete({fileId: cloneId});
 
         for (const writer of writers) {
-            await spreadsheet.shareSheet(drive, configId, writer);
-            console.log(`► https://docs.google.com/spreadsheets/d/${configId}/edit`)
+            await spreadsheet.shareSheet(drive, originalId, writer);
+            console.log(`► https://docs.google.com/spreadsheets/d/${originalId}/edit`)
         }
     }
 }

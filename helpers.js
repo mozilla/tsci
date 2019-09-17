@@ -1,6 +1,5 @@
 const config = require('./config.json');
 const fetch = require('node-fetch');
-const fs = require('fs');
 const retry = require('promise-fn-retry');
 const util = require('util');
 
@@ -235,18 +234,6 @@ function resumeQueryDates(inputDate) {
     return queryDates;
 }
 
-/**
- * Update config.json's spreadsheetId with the passed in `id`.
- * @param {String} id
- * @returns the new spreadsheetId from config.json
- */
-function updateConfigId(id) {
-    config.spreadsheetId = id;
-    fs.writeFileSync('config.json', JSON.stringify(config, null, 2));
-    const updatedConfig = fs.readFileSync('config.json');
-    return JSON.parse(updatedConfig).spreadsheetId;
-}
-
 module.exports = {
     bugzillaRetry,
     formatDateForAPIQueries,
@@ -263,5 +250,4 @@ module.exports = {
     isDesktop,
     isNotQA,
     resumeQueryDates,
-    updateConfigId,
 }
