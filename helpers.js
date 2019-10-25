@@ -114,7 +114,7 @@ function getBzLink(dupeSet) {
  */
 function isMobile(bug) {
     const mobileProducts = ['Core', 'Firefox for Android', 'Fenix', 'GeckoView'];
-    const mobileLabels = ['browser-fenix', 'browser-firefox-mobile', 'browser-focus-geckoview', 'browser-geckoview'];
+    const mobileLabels = ['browser-fenix', 'browser-firefox-mobile', 'browser-firefox-tablet', 'browser-focus-geckoview', 'browser-geckoview'];
     const mobileOS = ['Android', 'All', 'Unspecified'];
     return bug.product ?
         ((mobileProducts.includes(bug.product) && mobileOS.includes(bug.op_sys)) ||
