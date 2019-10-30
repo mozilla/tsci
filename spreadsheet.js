@@ -658,31 +658,16 @@ async function cloneDocument(drive, id) {
 }
 
 /**
- * Copy the last sheet from the cloned document back to the
- * original.
+ * Prevent ending up with "Copy of" in the document title.
  */
-async function copySheetToOriginal(sheets, id, configId) {
-    let resp = await sheets.spreadsheets.get({spreadsheetId: id});
-    const newProperties  = resp.data.sheets[resp.data.sheets.length - 1].properties;
-    // Copy the sheet from our clone to our original sheet
-    await sheets.spreadsheets.sheets.copyTo({
-        spreadsheetId: id,
-        sheetId: newProperties.sheetId,
-        resource: {
-            destinationSpreadsheetId: configId,
-        },
-    });
-    resp = await sheets.spreadsheets.get({spreadsheetId: configId});
-    const origProperties = resp.data.sheets[resp.data.sheets.length - 1].properties;
-    // Update the sheet title (it will be "Copy of $DATE")
+async function updateTitle(sheets, documentId) {
     await sheets.spreadsheets.batchUpdate({
-        spreadsheetId: configId,
+        spreadsheetId: documentId,
         resource: {
             requests: [{
-                "updateSheetProperties": {
+                "updateSpreadsheetProperties": {
                     "properties": {
-                        sheetId: origProperties.sheetId,
-                        title: newProperties.title,
+                        title: "Top Site Compatibility Index",
                     },
                     "fields": "title",
                 },
@@ -695,9 +680,9 @@ module.exports = {
     addBugData,
     addStaticData,
     cloneDocument,
-    copySheetToOriginal,
     createSpreadsheet,
     findOrCreateSheet,
     shareSheet,
     updateSummary,
+    updateTitle,
 }

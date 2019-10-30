@@ -18,7 +18,7 @@
   "ignoreFenix": true,
   "maxDate": null,
   "minDate": "2018",
-  "spreadsheetId": null,
+  "startingSpreadsheetId": null,
   "writers": [
     "user@example.com"
   ]
