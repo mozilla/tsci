@@ -319,12 +319,12 @@ async function addBugData(sheets, spreadsheetId, bugTable, title) {
     console.log('Updated duplicates (Desktop) cells: ' + result.data.updatedCells);
 }
 
-async function findOrCreateSheet(sheets, spreadsheetId, maxDate) {
+async function findOrCreateSheet(sheets, spreadsheetId, maxDate, title) {
     let result = await sheets.spreadsheets.get({
         spreadsheetId,
     });
     // Construct the sheet title.
-    const title = getSheetTitle(maxDate);
+    title = title || getSheetTitle(maxDate);
 
     // Find the sheet to update...
     let sheetId;
