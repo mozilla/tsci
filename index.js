@@ -53,6 +53,9 @@ const main = async () => {
         await spreadsheet.addStaticData(sheets, currentDocId, LIST_SIZE, LIST_FILE, sheetId, title);
         await spreadsheet.addBugData(sheets, currentDocId, bugTable, title);
         await spreadsheet.updateSummary(sheets, currentDocId, date);
+        // Move the newest weekly data sheet to the 4th spot
+        // [ Chart ][ Formula ][ Summary ][ Week N ]([ Week N -1 ]...)
+        await spreadsheet.moveSheet(sheets, currentDocId, date, 3);
         // now, set the current document to a clone (to become the new current document).
         // this way have a fresh one to start with next iteration.
         oldDocId = currentDocId;

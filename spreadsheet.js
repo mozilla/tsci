@@ -75,6 +75,37 @@ async function createSpreadsheet(sheets, title) {
     return spreadsheetId;
 }
 
+async function moveSheet(sheets, spreadsheetId, dateOrTitle, index) {
+    // This is sort of an ugly hack to make this more re-usable...
+    const title = dateOrTitle === "Summary" ? dateOrTitle : getSheetTitle(dateOrTitle);
+    const result = await sheets.spreadsheets.get({
+        spreadsheetId,
+    });
+
+    let sheetId;
+    for (const { properties } of result.data.sheets) {
+        if (properties.title !== title) {
+            continue;
+        }
+        sheetId = properties.sheetId;
+
+        await sheets.spreadsheets.batchUpdate({
+            spreadsheetId,
+            resource: {
+                requests: [{
+                    updateSheetProperties: {
+                        properties: {
+                            sheetId,
+                            index,
+                        },
+                        fields: "index",
+                    },
+                }],
+            },
+        });
+    }
+}
+
 async function updateSummary(sheets, spreadsheetId, date) {
     const title = getSheetTitle(date);
     let result = await sheets.spreadsheets.get({
@@ -685,6 +716,7 @@ module.exports = {
     cloneDocument,
     createSpreadsheet,
     findOrCreateSheet,
+    moveSheet,
     shareSheet,
     updateSummary,
     updateTitle,
