@@ -71,6 +71,12 @@ async function createSpreadsheet(sheets, title) {
     await findOrCreateSheet(sheets, spreadsheetId, null, "Chart");
     await findOrCreateSheet(sheets, spreadsheetId, null, "Formula");
 
+    // now move the Summary to the 3rd spot.
+    // This makes linking to the Chart simpler, since we don't have to worry
+    // about unpredictable hashes, i.e. #gid=1805032422
+    // [ Chart ][ Formula ][ Summary ][ Week N ]([ Week N -1 ]...)
+    await moveSheet(sheets, spreadsheetId, "Summary", 2);
+
     console.log(`Created new spreadsheet with ID: ${spreadsheetId}`);
     return spreadsheetId;
 }
