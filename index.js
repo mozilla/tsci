@@ -66,8 +66,10 @@ const main = async () => {
 
         for (const writer of writers) {
             await spreadsheet.shareSheet(drive, currentDocId, writer);
-            console.log(`Current document ► https://docs.google.com/spreadsheets/d/${currentDocId}/edit`);
         }
+
+        console.log(`Current document ► https://docs.google.com/spreadsheets/d/${currentDocId}/edit`);
+        await helpers.recordCurrentDoc(currentDocId);
     }
 }
 
