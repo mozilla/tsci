@@ -68,6 +68,9 @@ async function createSpreadsheet(sheets, title) {
         },
     });
 
+    await findOrCreateSheet(sheets, spreadsheetId, null, "Chart");
+    await findOrCreateSheet(sheets, spreadsheetId, null, "Formula");
+
     console.log(`Created new spreadsheet with ID: ${spreadsheetId}`);
     return spreadsheetId;
 }
