@@ -220,7 +220,7 @@ function getQueryDates(inputDate) {
  * @param {string} currentDocId
  */
 async function recordCurrentDoc(currentDocId) {
-    return fs.writeFile("currentDoc.json",
+    return fs.writeFile(`${config.currentDocPath}/currentDoc.json`,
         JSON.stringify({"currentDoc": currentDocId}), 'utf8');
 }
 

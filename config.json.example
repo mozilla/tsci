@@ -3,6 +3,7 @@
   "listDir": "data/",
   "bugzillaKey": "",
   "githubKey": "",
+  "currentDocPath": ".",
   "ignoredDomains": [
     "github.com",
     "github.io",
