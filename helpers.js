@@ -1,5 +1,6 @@
 const config = require('./config.json');
 const fetch = require('node-fetch');
+const fs = require('fs').promises;
 const retry = require('promise-fn-retry');
 const util = require('util');
 
@@ -214,6 +215,16 @@ function getQueryDates(inputDate) {
 }
 
 /**
+ * Write the passed in currentDocId to disk, so it can be read from other
+ * consumers.
+ * @param {string} currentDocId
+ */
+async function recordCurrentDoc(currentDocId) {
+    return fs.writeFile(`${config.currentDocPath}/currentDoc.json`,
+        JSON.stringify({"currentDoc": currentDocId}), 'utf8');
+}
+
+/**
  * Return the list of query dates until the present, starting
  * at the specified date.
  * @param {Date} inputDate the date to resume with
@@ -249,5 +260,6 @@ module.exports = {
     isMobile,
     isDesktop,
     isNotQA,
+    recordCurrentDoc,
     resumeQueryDates,
 }

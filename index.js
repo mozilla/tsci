@@ -15,8 +15,8 @@ const main = async () => {
     const writers = config.writers || ['user@example.com'];
     const maxDate = config.maxDate || undefined;
     const minDate = config.minDate || "2018";
-    let originalId = config.spreadsheetId;
-    let cloneId;
+    let currentDocId = config.startingSpreadsheetId;
+    let oldDocId;
     let queryDates = [];
 
     const parsedMinDate = new Date(minDate);
@@ -45,24 +45,34 @@ const main = async () => {
         const drive = google.drive({ version: 'v3', auth })
 
         const docTitle = 'Top Site Compatibility Index';
-        if (!originalId) {
-            originalId = await spreadsheet.createSpreadsheet(sheets, docTitle, date);
+        if (!currentDocId) {
+            currentDocId = await spreadsheet.createSpreadsheet(sheets, docTitle, date);
         }
-        // Create a clone of the document here so we can operate on that
-        // and only copy over the completed sheet.
-        cloneId = await spreadsheet.cloneDocument(drive, originalId);
-        const { sheetId, title } = await spreadsheet.findOrCreateSheet(sheets, cloneId, date);
-        await spreadsheet.addStaticData(sheets, cloneId, LIST_SIZE, LIST_FILE, sheetId, title);
-        await spreadsheet.addBugData(sheets, cloneId, bugTable, title);
-        await spreadsheet.copySheetToOriginal(sheets, cloneId, originalId);
-        await spreadsheet.updateSummary(sheets, originalId, date);
-        // delete the clone, because we don't need it anymore.
-        await drive.files.delete({fileId: cloneId});
+
+        const { sheetId, title } = await spreadsheet.findOrCreateSheet(sheets, currentDocId, date);
+        await spreadsheet.addStaticData(sheets, currentDocId, LIST_SIZE, LIST_FILE, sheetId, title);
+        await spreadsheet.addBugData(sheets, currentDocId, bugTable, title);
+        await spreadsheet.updateSummary(sheets, currentDocId, date);
+        // Move the newest weekly data sheet to the 4th spot
+        // [ Chart ][ Formula ][ Summary ][ Week N ]([ Week N -1 ]...)
+        await spreadsheet.moveSheet(sheets, currentDocId, date, 3);
+        // now, set the current document to a clone (to become the new current document).
+        // this way have a fresh one to start with next iteration.
+        oldDocId = currentDocId;
+        currentDocId = await spreadsheet.cloneDocument(drive, currentDocId);
+        console.log(`Cloning current document into document with id: ${currentDocId}`);
+        await spreadsheet.updateTitle(sheets, currentDocId);
+
+        // delete the old one, because we don't need it anymore.
+        console.log(`Deleting cloned document with id: ${oldDocId}`);
+        await drive.files.delete({fileId: oldDocId});
 
         for (const writer of writers) {
-            await spreadsheet.shareSheet(drive, originalId, writer);
-            console.log(`► https://docs.google.com/spreadsheets/d/${originalId}/edit`)
+            await spreadsheet.shareSheet(drive, currentDocId, writer);
         }
+
+        console.log(`Current document ► https://docs.google.com/spreadsheets/d/${currentDocId}/edit`);
+        await helpers.recordCurrentDoc(currentDocId);
     }
 }
 

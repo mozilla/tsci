@@ -68,8 +68,48 @@ async function createSpreadsheet(sheets, title) {
         },
     });
 
+    await findOrCreateSheet(sheets, spreadsheetId, null, "Chart");
+    await findOrCreateSheet(sheets, spreadsheetId, null, "Formula");
+
+    // now move the Summary to the 3rd spot.
+    // This makes linking to the Chart simpler, since we don't have to worry
+    // about unpredictable hashes, i.e. #gid=1805032422
+    // [ Chart ][ Formula ][ Summary ][ Week N ]([ Week N -1 ]...)
+    await moveSheet(sheets, spreadsheetId, "Summary", 2);
+
     console.log(`Created new spreadsheet with ID: ${spreadsheetId}`);
     return spreadsheetId;
+}
+
+async function moveSheet(sheets, spreadsheetId, dateOrTitle, index) {
+    // This is sort of an ugly hack to make this more re-usable...
+    const title = dateOrTitle === "Summary" ? dateOrTitle : getSheetTitle(dateOrTitle);
+    const result = await sheets.spreadsheets.get({
+        spreadsheetId,
+    });
+
+    let sheetId;
+    for (const { properties } of result.data.sheets) {
+        if (properties.title !== title) {
+            continue;
+        }
+        sheetId = properties.sheetId;
+
+        await sheets.spreadsheets.batchUpdate({
+            spreadsheetId,
+            resource: {
+                requests: [{
+                    updateSheetProperties: {
+                        properties: {
+                            sheetId,
+                            index,
+                        },
+                        fields: "index",
+                    },
+                }],
+            },
+        });
+    }
 }
 
 async function updateSummary(sheets, spreadsheetId, date) {
@@ -319,12 +359,12 @@ async function addBugData(sheets, spreadsheetId, bugTable, title) {
     console.log('Updated duplicates (Desktop) cells: ' + result.data.updatedCells);
 }
 
-async function findOrCreateSheet(sheets, spreadsheetId, maxDate) {
+async function findOrCreateSheet(sheets, spreadsheetId, maxDate, title) {
     let result = await sheets.spreadsheets.get({
         spreadsheetId,
     });
     // Construct the sheet title.
-    const title = getSheetTitle(maxDate);
+    title = title || getSheetTitle(maxDate);
 
     // Find the sheet to update...
     let sheetId;
@@ -658,31 +698,16 @@ async function cloneDocument(drive, id) {
 }
 
 /**
- * Copy the last sheet from the cloned document back to the
- * original.
+ * Prevent ending up with "Copy of" in the document title.
  */
-async function copySheetToOriginal(sheets, id, configId) {
-    let resp = await sheets.spreadsheets.get({spreadsheetId: id});
-    const newProperties  = resp.data.sheets[resp.data.sheets.length - 1].properties;
-    // Copy the sheet from our clone to our original sheet
-    await sheets.spreadsheets.sheets.copyTo({
-        spreadsheetId: id,
-        sheetId: newProperties.sheetId,
-        resource: {
-            destinationSpreadsheetId: configId,
-        },
-    });
-    resp = await sheets.spreadsheets.get({spreadsheetId: configId});
-    const origProperties = resp.data.sheets[resp.data.sheets.length - 1].properties;
-    // Update the sheet title (it will be "Copy of $DATE")
+async function updateTitle(sheets, documentId) {
     await sheets.spreadsheets.batchUpdate({
-        spreadsheetId: configId,
+        spreadsheetId: documentId,
         resource: {
             requests: [{
-                "updateSheetProperties": {
+                "updateSpreadsheetProperties": {
                     "properties": {
-                        sheetId: origProperties.sheetId,
-                        title: newProperties.title,
+                        title: "Top Site Compatibility Index",
                     },
                     "fields": "title",
                 },
@@ -695,9 +720,10 @@ module.exports = {
     addBugData,
     addStaticData,
     cloneDocument,
-    copySheetToOriginal,
     createSpreadsheet,
     findOrCreateSheet,
+    moveSheet,
     shareSheet,
     updateSummary,
+    updateTitle,
 }

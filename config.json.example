@@ -3,6 +3,7 @@
   "listDir": "data/",
   "bugzillaKey": "",
   "githubKey": "",
+  "currentDocPath": ".",
   "ignoredDomains": [
     "github.com",
     "github.io",
@@ -18,7 +19,7 @@
   "ignoreFenix": true,
   "maxDate": null,
   "minDate": "2018",
-  "spreadsheetId": null,
+  "startingSpreadsheetId": null,
   "writers": [
     "user@example.com"
   ]
