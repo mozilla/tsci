@@ -24,6 +24,8 @@ would look like:
   "bugzillaKey": "",
   // The GitHub API authentication key.
   "githubKey": "",
+  // The path to save currentDoc.json (by default, CWD)
+  "currentDocPath": ".",
   // A list of domains to ignore when fetching bug results.
   "ignoredDomains": [
     "github.com",
@@ -46,8 +48,9 @@ would look like:
   // The earliest date to consider for when the bug or issue has to have been
   // filed. By default 2018-01-01 is used.
   "minDate": "2018",
-  // The ID of a spreadsheet to append to.
-  "spreadsheetId": null,
+  // The ID of a spreadsheet to work on. This only applies to the first weekly runs,
+  // if more than one week is specified. Otherwise, a new spreadsheet will be created.
+  "startingSpreadsheetId": null,
   // A list of Google accounts with whom the final spreadsheet should be shared.
   "writers": [
     "user@example.com"
