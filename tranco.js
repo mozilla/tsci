@@ -59,10 +59,10 @@ const fetchListID = async (date) => {
         date = new Date();
     }
     return fetch(ID_URL)
-        .then(res => {
+        .then(async res => {
             if (res.ok &&
                 res.headers.get('content-type') === 'text/plain; charset=utf-8') {
-                return res.text();
+                    return {listID: await res.text(), listDate: date};
             }
             else if (res.status === 503) {
                 const newDate = new Date(date);
@@ -96,12 +96,13 @@ const fetchList = async (size = 500, directory = "data/", date) => {
         });
     });
 
-    // Fetch the list ID for the requested date.
-    const LIST_ID = await fetchListID(date);
     if (!date) {
         date = new Date();
     }
-    const file = `${directory}list-${parseDate(date)}.csv`;
+
+    // Fetch the list ID for the requested date.
+    const { listID, listDate } = await fetchListID(date);
+    const file = `${directory}list-${parseDate(listDate)}.csv`;
 
     // Check for an already downloaded list.
     const listIsCached = await fs.promises.access(file, fs.constants.R_OK | fs.constants.W_OK)
@@ -113,17 +114,17 @@ const fetchList = async (size = 500, directory = "data/", date) => {
     }
 
     // Fetch the list.
-    const LIST_URL = `https://tranco-list.eu/download/${LIST_ID}/${listSize}`;
+    const LIST_URL = `https://tranco-list.eu/download/${listID}/${listSize}`;
     return fetch(LIST_URL).then(res => {
         if (!res.ok ||
             res.headers.get('content-type') !== 'text/csv; charset=utf-8') {
-            throw new Error(`List ${LIST_ID} not found!`);
+            throw new Error(`List ${listID} not found!`);
         }
         return new Promise((resolve, reject) => {
             const dest = fs.createWriteStream(file);
             res.body.pipe(dest);
             dest.on('finish', () => {
-                console.log(`Downloaded Tranco list with ID ${LIST_ID} for date ${parseDate(date)}`);
+                console.log(`Downloaded Tranco list with ID ${listID} for date ${parseDate(listDate)}`);
                 removeIgnoredDomains(file).then((newFile) => resolve(newFile), error => reject(error));
             });
         });
