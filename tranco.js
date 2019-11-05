@@ -8,6 +8,32 @@ const IGNORED_DOMAINS = config.ignoredDomains || [];
 let DOMAINS_REGEXP_CACHE = [];
 
 /**
+ * Clamp the CSV to config.listSize. We do this because we end up fetching
+ * more than config.listSize by config.ignoredDomains.length. If all those
+ * domains are removed, this will become a no-op.
+ */
+const clampListSize = (listFile) => {
+    return new Promise(async (resolve, reject) => {
+        const data = await fs.promises.readFile(listFile, 'utf8')
+            .catch(err => reject(err));
+        const lines = data.split(/\r?\n/);
+        const desiredLength = config.listSize;
+        const currentLength = lines.length;
+        // It's unclear why the list would be smaller, but if it is
+        // just return it.
+        if (currentLength <= desiredLength) {
+            resolve(listFile);
+        } else {
+            lines.splice(desiredLength, currentLength - desiredLength);
+            const clampedFile = lines.join("\r\n");
+            await fs.promises.writeFile(listFile, clampedFile)
+                .catch(err => reject(err));
+            resolve(listFile);
+        }
+    });
+};
+
+/**
  * Return the list without the domains specific in config.ignoredDomains
  * @param {String} listFile
  * @returns a String path to the CSV file
@@ -120,7 +146,9 @@ const fetchList = async (size = 500, directory = "data/", date) => {
             res.body.pipe(dest);
             dest.on('finish', () => {
                 console.log(`Downloaded Tranco list with ID ${LIST_ID} for date ${parseDate(date)}`);
-                removeIgnoredDomains(file).then((newFile) => resolve(newFile), error => reject(error));
+                removeIgnoredDomains(file)
+                    .then(clampListSize)
+                    .then((newFile) => resolve(newFile), error => reject(error));
             });
         });
     });
