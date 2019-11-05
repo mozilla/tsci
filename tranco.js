@@ -71,6 +71,10 @@ const fetchListID = async (date) => {
                 // towards the present.
                 if (date > new Date()) {
                     newDate.setDate(newDate.getDate() - 1);
+                // If we end up at "today", we need to request the list from
+                // the day before -- the daily list is actually a day old.
+                } else if (parseDate(newDate) === parseDate(new Date())) {
+                    newDate.setDate(newDate.getDate() - 2);
                 } else {
                     newDate.setDate(newDate.getDate() + 1);
                 }
