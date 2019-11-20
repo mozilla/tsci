@@ -87,14 +87,15 @@ const fetchListID = async (date) => {
             }
             else if (res.status === 503) {
                 const newDate = new Date(date);
+                const now = new Date();
                 // Future dates are unlikely to be available yet, but also ones
                 // from long ago may have never been available. Try to converge
                 // towards the present.
-                if (date > new Date()) {
+                if (date > now) {
                     newDate.setDate(newDate.getDate() - 1);
                 // If we end up at "today", we need to request the list from
                 // the day before -- the daily list is actually a day old.
-                } else if (parseDate(newDate) === parseDate(new Date())) {
+                } else if (parseDate(newDate) === parseDate(now)) {
                     newDate.setDate(newDate.getDate() - 2);
                 } else {
                     newDate.setDate(newDate.getDate() + 1);
