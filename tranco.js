@@ -77,13 +77,8 @@ const removeIgnoredDomains = function (listFile) {
  * @returns the String of the list ID
  */
 const fetchListID = async (date) => {
-    const LATEST_LIST_URL = 'https://tranco-list.eu/top-1m-id';
-    let ID_URL = LATEST_LIST_URL;
-    if (date) {
-        ID_URL = `https://tranco-list.eu/daily_list_id?date=${parseDate(date)}`;
-    } else {
-        date = new Date();
-    }
+    const ID_URL = `https://tranco-list.eu/daily_list_id?date=${parseDate(date)}`;
+
     return fetch(ID_URL)
         .then(async res => {
             if (res.ok &&
