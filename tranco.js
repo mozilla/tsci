@@ -77,26 +77,26 @@ const removeIgnoredDomains = function (listFile) {
  * @returns the String of the list ID
  */
 const fetchListID = async (date) => {
-    const LATEST_LIST_URL = 'https://tranco-list.eu/top-1m-id';
-    let ID_URL = LATEST_LIST_URL;
-    if (date) {
-        ID_URL = `https://tranco-list.eu/daily_list_id?date=${parseDate(date)}`;
-    } else {
-        date = new Date();
-    }
+    const ID_URL = `https://tranco-list.eu/daily_list_id?date=${parseDate(date)}`;
+
     return fetch(ID_URL)
-        .then(res => {
+        .then(async res => {
             if (res.ok &&
                 res.headers.get('content-type') === 'text/plain; charset=utf-8') {
-                return res.text();
+                    return {listID: await res.text(), listDate: date};
             }
             else if (res.status === 503) {
                 const newDate = new Date(date);
+                const now = new Date();
                 // Future dates are unlikely to be available yet, but also ones
                 // from long ago may have never been available. Try to converge
                 // towards the present.
-                if (date > new Date()) {
+                if (date > now) {
                     newDate.setDate(newDate.getDate() - 1);
+                // If we end up at "today", we need to request the list from
+                // the day before -- the daily list is actually a day old.
+                } else if (parseDate(newDate) === parseDate(now)) {
+                    newDate.setDate(newDate.getDate() - 2);
                 } else {
                     newDate.setDate(newDate.getDate() + 1);
                 }
@@ -118,12 +118,13 @@ const fetchList = async (size = 500, directory = "data/", date) => {
         });
     });
 
-    // Fetch the list ID for the requested date.
-    const LIST_ID = await fetchListID(date);
     if (!date) {
         date = new Date();
     }
-    const file = `${directory}list-${parseDate(date)}.csv`;
+
+    // Fetch the list ID for the requested date.
+    const { listID, listDate } = await fetchListID(date);
+    const file = `${directory}list-${parseDate(listDate)}.csv`;
 
     // Check for an already downloaded list.
     const listIsCached = await fs.promises.access(file, fs.constants.R_OK | fs.constants.W_OK)
@@ -135,17 +136,17 @@ const fetchList = async (size = 500, directory = "data/", date) => {
     }
 
     // Fetch the list.
-    const LIST_URL = `https://tranco-list.eu/download/${LIST_ID}/${listSize}`;
+    const LIST_URL = `https://tranco-list.eu/download/${listID}/${listSize}`;
     return fetch(LIST_URL).then(res => {
         if (!res.ok ||
             res.headers.get('content-type') !== 'text/csv; charset=utf-8') {
-            throw new Error(`List ${LIST_ID} not found!`);
+            throw new Error(`List ${listID} not found!`);
         }
         return new Promise((resolve, reject) => {
             const dest = fs.createWriteStream(file);
             res.body.pipe(dest);
             dest.on('finish', () => {
-                console.log(`Downloaded Tranco list with ID ${LIST_ID} for date ${parseDate(date)}`);
+                console.log(`Downloaded Tranco list with ID ${listID} for date ${parseDate(listDate)}`);
                 removeIgnoredDomains(file)
                     .then(clampListSize)
                     .then((newFile) => resolve(newFile), error => reject(error));
