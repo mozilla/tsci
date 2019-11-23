@@ -14,12 +14,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/past/tsci.git"
+    "url": "git+https://github.com/mozilla/tsci.git"
   },
   "bugs": {
-    "url": "https://github.com/past/tsci/issues"
+    "url": "https://github.com/mozilla/tsci/issues"
   },
-  "homepage": "https://github.com/past/tsci/blob/master/README.md",
+  "homepage": "https://github.com/mozilla/tsci/blob/master/README.md",
   "author": "Panos Astithas <pastith@gmail.com>",
   "license": "MPL-2.0",
   "dependencies": {
