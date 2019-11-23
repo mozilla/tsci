@@ -216,12 +216,17 @@ function getQueryDates(inputDate) {
 
 /**
  * Write the passed in currentDocId to disk, so it can be read from other
- * consumers.
+ * consumers, and save it to the config.
  * @param {string} currentDocId
  */
 async function recordCurrentDoc(currentDocId) {
-    return fs.writeFile(`${config.currentDocPath}/currentDoc.json`,
-        JSON.stringify({"currentDoc": currentDocId}), 'utf8');
+    config.startingSpreadsheetId = currentDocId;
+
+    Promise.all([
+        fs.writeFile("config.json", JSON.stringify(config, null, 2), 'utf8'),
+        fs.writeFile(`${config.currentDocPath}/currentDoc.json`,
+            JSON.stringify({"currentDoc": currentDocId}), 'utf8'),
+    ]);
 }
 
 /**
