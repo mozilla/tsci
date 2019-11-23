@@ -71,6 +71,9 @@ const main = async () => {
             await spreadsheet.shareSheet(drive, currentDocId, writer);
         }
 
+        console.log("Publishing document for embedding.")
+        await spreadsheet.publishSheet(drive, currentDocId);
+
         console.log(`Current document ► https://docs.google.com/spreadsheets/d/${currentDocId}/edit`);
         await helpers.recordCurrentDoc(currentDocId);
     }

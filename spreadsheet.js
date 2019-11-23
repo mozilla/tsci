@@ -716,6 +716,24 @@ async function updateTitle(sheets, documentId) {
     });
 }
 
+/*
+  Update the Google Sheet to be "published", which will allow
+  us to embed it as an iframe. Once it's published, it can be embedded
+  as the following URL:
+
+  `https://docs.google.com/spreadsheets/u/1/d/${currentDocId}/pubhtml?widget=true&headers=false&embedded=true`
+*/
+async function publishSheet(drive, fileId) {
+    return drive.revisions.update({
+        fileId,
+        revisionId: 1,
+        requestBody: {
+            published: true,
+            publishAuto: true,
+        },
+    });
+  }
+
 module.exports = {
     addBugData,
     addStaticData,
@@ -723,6 +741,7 @@ module.exports = {
     createSpreadsheet,
     findOrCreateSheet,
     moveSheet,
+    publishSheet,
     shareSheet,
     updateSummary,
     updateTitle,
