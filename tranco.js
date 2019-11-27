@@ -45,14 +45,12 @@ const removeIgnoredDomains = function(listFile) {
     // Modify the website list, if we have any ignoredDomains.
     if (IGNORED_DOMAINS.length) {
       if (!DOMAINS_REGEXP_CACHE.length) {
-        DOMAINS_REGEXP_CACHE = IGNORED_DOMAINS.map((value, index) => {
+        DOMAINS_REGEXP_CACHE = IGNORED_DOMAINS.map(value => {
           // create an escaped regexp out of each domain we want to ignore
           // the CSV format will look like one of the following (why tho):
           // 1,example.com\r\n
           // 1,example.com\n
-          return (IGNORED_DOMAINS[index] = new RegExp(
-            `\\d{1,3},${escapeStringRegexp(value)}\\r?\\n`
-          ));
+          return new RegExp(`\\d{1,3},${escapeStringRegexp(value)}\\r?\\n`);
         });
       }
       console.log(`Skipping domains per config.ignoredDomains`);
