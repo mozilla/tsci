@@ -1,5 +1,6 @@
 const { google } = require("googleapis");
 const bugs = require("./bugs");
+const fs = require("fs");
 const helpers = require("./helpers");
 const spreadsheet = require("./spreadsheet");
 const tranco = require("./tranco");
@@ -7,7 +8,9 @@ const tranco = require("./tranco");
 const argv = process.argv.slice(2);
 
 const main = async () => {
-  const config = require("./config.json");
+  const config = JSON.parse(
+    await fs.promises.readFile("config.json", { encoding: "utf8" })
+  );
   const LIST_SIZE = config.listSize || 500;
   const LIST_DIR = config.listDir || "data/";
   const bugzillaKey = config.bugzillaKey || "";
