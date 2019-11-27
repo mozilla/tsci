@@ -1,8 +1,9 @@
-const config = require("./config.json");
 const fetch = require("node-fetch");
-const fs = require("fs").promises;
+const fs = require("fs");
 const retry = require("promise-fn-retry");
 const util = require("util");
+
+const config = JSON.parse(fs.readFileSync("config.json", { encoding: "utf8" }));
 
 /**
  * Retry a bugzilla query.
@@ -241,8 +242,12 @@ async function recordCurrentDoc(currentDocId) {
   config.startingSpreadsheetId = currentDocId;
 
   Promise.all([
-    fs.writeFile("config.json", JSON.stringify(config, null, 2), "utf8"),
-    fs.writeFile(
+    fs.promises.writeFile(
+      "config.json",
+      JSON.stringify(config, null, 2),
+      "utf8"
+    ),
+    fs.promises.writeFile(
       `${config.currentDocPath}/currentDoc.json`,
       JSON.stringify({ currentDoc: currentDocId }),
       "utf8"
