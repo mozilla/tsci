@@ -7,10 +7,11 @@
     "node": ">=8"
   },
   "scripts": {
-    "start": "GOOGLE_APPLICATION_CREDENTIALS='credentials.json' node index.js",
+    "jest": "jest",
     "lint": "eslint *.js",
     "lint-fix": "run-p 'lint -- --fix'",
-    "test": "run-p lint"
+    "start": "GOOGLE_APPLICATION_CREDENTIALS='credentials.json' node index.js",
+    "test": "run-p lint jest"
   },
   "repository": {
     "type": "git",
