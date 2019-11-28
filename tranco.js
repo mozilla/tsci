@@ -11,7 +11,7 @@ let DOMAINS_REGEXP_CACHE = [];
  * more than config.listSize by config.ignoredDomains.length. If all those
  * domains are removed, this will become a no-op.
  */
-const clampListSize = listFile => {
+const clampListSize = (listFile, config) => {
   return new Promise(async (resolve, reject) => {
     const data = await fs.promises
       .readFile(listFile, "utf8")
@@ -67,11 +67,11 @@ const removeIgnoredDomains = function(listFile, config) {
               "Warning: config.ignoredDomains set, but the list was not modified."
             );
           }
-          resolve(listFile);
+          resolve(listFile, config);
         })
         .catch(error => reject(error));
     } else {
-      resolve(listFile);
+      resolve(listFile, config);
     }
   });
 };
@@ -187,6 +187,7 @@ function parseDate(date) {
 }
 
 module.exports = {
+  clampListSize,
   fetchList,
   removeIgnoredDomains,
 };
