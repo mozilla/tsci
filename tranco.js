@@ -51,6 +51,7 @@ const removeIgnoredDomains = function(listFile, config) {
           // the CSV format will look like one of the following (why tho):
           // 1,example.com\r\n
           // 1,example.com\n
+          // 1,example.com
           return new RegExp(
             `^\\d{1,3},${escapeStringRegexp(value)}(\\r?\\n|$)`,
             "m"
