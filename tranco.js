@@ -4,7 +4,6 @@ const fs = require("fs");
 const fetch = require("node-fetch");
 const replace = require("replace-in-file");
 
-const IGNORED_DOMAINS = config.ignoredDomains || [];
 let DOMAINS_REGEXP_CACHE = [];
 
 /**
@@ -12,7 +11,7 @@ let DOMAINS_REGEXP_CACHE = [];
  * more than config.listSize by config.ignoredDomains.length. If all those
  * domains are removed, this will become a no-op.
  */
-const clampListSize = listFile => {
+const clampListSize = (listFile, config) => {
   return new Promise(async (resolve, reject) => {
     const data = await fs.promises
       .readFile(listFile, "utf8")
@@ -40,7 +39,9 @@ const clampListSize = listFile => {
  * @param {String} listFile
  * @returns a String path to the CSV file
  */
-const removeIgnoredDomains = function(listFile) {
+const removeIgnoredDomains = function(listFile, config) {
+  const IGNORED_DOMAINS = config.ignoredDomains;
+
   return new Promise((resolve, reject) => {
     // Modify the website list, if we have any ignoredDomains.
     if (IGNORED_DOMAINS.length) {
@@ -50,7 +51,11 @@ const removeIgnoredDomains = function(listFile) {
           // the CSV format will look like one of the following (why tho):
           // 1,example.com\r\n
           // 1,example.com\n
-          return new RegExp(`\\d{1,3},${escapeStringRegexp(value)}\\r?\\n`);
+          // 1,example.com
+          return new RegExp(
+            `^\\d{1,3},${escapeStringRegexp(value)}(\\r?\\n|$)`,
+            "m"
+          );
         });
       }
       console.log(`Skipping domains per config.ignoredDomains`);
@@ -66,11 +71,11 @@ const removeIgnoredDomains = function(listFile) {
               "Warning: config.ignoredDomains set, but the list was not modified."
             );
           }
-          resolve(listFile);
+          resolve(listFile, config);
         })
         .catch(error => reject(error));
     } else {
-      resolve(listFile);
+      resolve(listFile, config);
     }
   });
 };
@@ -113,8 +118,13 @@ const fetchListID = async date => {
   });
 };
 
-const fetchList = async (size = 500, directory = "data/", date) => {
-  const listSize = size + IGNORED_DOMAINS.length;
+const fetchList = async (
+  size = 500,
+  directory = "data/",
+  date,
+  ignoredDomains = config.ignoredDomains
+) => {
+  const listSize = size + ignoredDomains.length;
 
   // Create the data directory.
   await new Promise((resolve, reject) => {
@@ -160,7 +170,7 @@ const fetchList = async (size = 500, directory = "data/", date) => {
             listDate
           )}`
         );
-        removeIgnoredDomains(file)
+        removeIgnoredDomains(file, config)
           .then(clampListSize)
           .then(
             newFile => resolve(newFile),
@@ -181,5 +191,7 @@ function parseDate(date) {
 }
 
 module.exports = {
+  clampListSize,
   fetchList,
+  removeIgnoredDomains,
 };
