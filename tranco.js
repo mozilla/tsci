@@ -51,7 +51,10 @@ const removeIgnoredDomains = function(listFile, config) {
           // the CSV format will look like one of the following (why tho):
           // 1,example.com\r\n
           // 1,example.com\n
-          return new RegExp(`\\d{1,3},${escapeStringRegexp(value)}\\r?\\n`);
+          return new RegExp(
+            `^\\d{1,3},${escapeStringRegexp(value)}(\\r?\\n|$)`,
+            "m"
+          );
         });
       }
       console.log(`Skipping domains per config.ignoredDomains`);

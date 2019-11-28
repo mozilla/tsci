@@ -2,7 +2,7 @@ const fs = require("fs");
 const tranco = require("../tranco.js");
 
 const config = {
-  ignoredDomains: ["boring.com", "superboring.com"],
+  ignoredDomains: ["boring.com", "superboring.com", "last.com"],
   listSize: 5,
 };
 const COPY = "./tests/fixtures/copy.csv";
@@ -21,9 +21,9 @@ afterAll(async () => {
 test("ignoredDomains get removed", async () => {
   await tranco.removeIgnoredDomains(COPY, config).then(async csvPath => {
     const data = await fs.promises.readFile(csvPath, "utf8");
-    const lines = data.split(/\r?\n/);
+    const lines = data.split(/^/m);
 
-    expect(lines.length).toBe(8);
+    expect(lines.length).toBe(7);
     expect(csvPath).toBe(COPY);
   });
 });
