@@ -11,36 +11,36 @@ let DOMAINS_REGEXP_CACHE = [];
  * more than config.listSize by config.ignoredDomains.length. If all those
  * domains are removed, this will become a no-op.
  */
-const clampListSize = (listFile, config) => {
+const clampListSize = args => {
   return new Promise(async (resolve, reject) => {
     const data = await fs.promises
-      .readFile(listFile, "utf8")
+      .readFile(args.listFile, "utf8")
       .catch(err => reject(err));
     const lines = data.split(/\r?\n/);
-    const desiredLength = config.listSize;
+    const desiredLength = args.config.listSize;
     const currentLength = lines.length;
     // It's unclear why the list would be smaller, but if it is
     // just return it.
     if (currentLength <= desiredLength) {
-      resolve(listFile);
+      resolve(args.listFile);
     } else {
       lines.splice(desiredLength, currentLength - desiredLength);
       const clampedFile = lines.join("\r\n");
       await fs.promises
-        .writeFile(listFile, clampedFile)
+        .writeFile(args.listFile, clampedFile)
         .catch(err => reject(err));
-      resolve(listFile);
+      resolve(args.listFile);
     }
   });
 };
 
 /**
  * Return the list without the domains specific in config.ignoredDomains
- * @param {String} listFile
- * @returns a String path to the CSV file
+ * @param {Object} args ({listFile, config})
+ * @returns args
  */
-const removeIgnoredDomains = function(listFile, config) {
-  const IGNORED_DOMAINS = config.ignoredDomains;
+const removeIgnoredDomains = function(args) {
+  const IGNORED_DOMAINS = args.config.ignoredDomains;
 
   return new Promise((resolve, reject) => {
     // Modify the website list, if we have any ignoredDomains.
@@ -61,7 +61,7 @@ const removeIgnoredDomains = function(listFile, config) {
       console.log(`Skipping domains per config.ignoredDomains`);
       replace({
         countMatches: true,
-        files: listFile,
+        files: args.listFile,
         from: DOMAINS_REGEXP_CACHE,
         to: "",
       })
@@ -71,11 +71,11 @@ const removeIgnoredDomains = function(listFile, config) {
               "Warning: config.ignoredDomains set, but the list was not modified."
             );
           }
-          resolve(listFile, config);
+          resolve(args);
         })
         .catch(error => reject(error));
     } else {
-      resolve(listFile, config);
+      resolve(args);
     }
   });
 };
@@ -170,7 +170,7 @@ const fetchList = async (
             listDate
           )}`
         );
-        removeIgnoredDomains(file, config)
+        removeIgnoredDomains({ listFile: file, config })
           .then(clampListSize)
           .then(
             newFile => resolve(newFile),
