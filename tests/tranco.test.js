@@ -1,52 +1,54 @@
 const fs = require("fs");
 const tranco = require("../tranco.js");
 
-const config = {
-  ignoredDomains: ["boring.com", "superboring.com", "last.com"],
-  listSize: 5,
+const args = {
+  listFile: "./tests/fixtures/copy.csv",
+  config: {
+    ignoredDomains: ["boring.com", "superboring.com", "last.com"],
+    listSize: 5,
+  },
 };
-const COPY = "./tests/fixtures/copy.csv";
 
 beforeEach(async () => {
   // Create a copy of the test.csv,
   // so we can modify it
-  await fs.promises.copyFile("tests/fixtures/test.csv", COPY);
+  await fs.promises.copyFile("tests/fixtures/test.csv", args.listFile);
 });
 
 afterAll(async () => {
   // Get rid of the copy when we're done
-  await fs.promises.unlink(COPY);
+  await fs.promises.unlink(args.listFile);
 });
 
 test("ignoredDomains get removed", async () => {
-  await tranco.removeIgnoredDomains(COPY, config).then(async csvPath => {
-    const data = await fs.promises.readFile(csvPath, "utf8");
+  await tranco.removeIgnoredDomains(args).then(async returnedArgs => {
+    const data = await fs.promises.readFile(returnedArgs.listFile, "utf8");
     const lines = data.split(/^/m);
 
     expect(lines.length).toBe(7);
-    expect(csvPath).toBe(COPY);
+    expect(returnedArgs.listFile).toBe(args.listFile);
   });
 });
 
 describe("clampListSize tests", () => {
   test("clampListSize current size > config.listSize", async () => {
-    await tranco.clampListSize(COPY, config).then(async csvPath => {
+    await tranco.clampListSize(args).then(async csvPath => {
       const data = await fs.promises.readFile(csvPath, "utf8");
       const lines = data.split(/\r?\n/);
 
       expect(lines.length).toBe(5);
-      expect(csvPath).toBe(COPY);
+      expect(csvPath).toBe(args.listFile);
     });
   });
 
   test("clampListSize current size < config.listSize", async () => {
-    config.listSize = 15;
-    await tranco.clampListSize(COPY, config).then(async csvPath => {
+    args.config.listSize = 15;
+    await tranco.clampListSize(args).then(async csvPath => {
       const data = await fs.promises.readFile(csvPath, "utf8");
       const lines = data.split(/\r?\n/);
 
       expect(lines.length).toBe(10);
-      expect(csvPath).toBe(COPY);
+      expect(csvPath).toBe(args.listFile);
     });
   });
 });
