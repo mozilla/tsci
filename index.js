@@ -7,6 +7,14 @@ const tranco = require("./tranco");
 
 const argv = process.argv.slice(2);
 
+process.on("unhandledRejection", (reason, promise) => {
+  console.log(`tsci: Unhandled Rejection at: ${promise}, reason: ${reason}`);
+});
+
+process.on("uncaughtException", err => {
+  console.log(`tsci: Uncaught exception at: ${err}`);
+});
+
 const main = async () => {
   const config = JSON.parse(
     await fs.promises.readFile("config.json", { encoding: "utf8" })
