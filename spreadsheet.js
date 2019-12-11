@@ -794,6 +794,7 @@ async function publishSheet(drive, fileId) {
     requestBody: {
       published: true,
       publishAuto: true,
+      publishedOutsideDomain: true,
     },
   });
 }
