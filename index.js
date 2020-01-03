@@ -101,10 +101,6 @@ const main = async () => {
     );
     await spreadsheet.updateTitle(sheets, currentDocId);
 
-    // delete the old one, because we don't need it anymore.
-    console.log(`Deleting cloned document with id: ${oldDocId}`);
-    await drive.files.delete({ fileId: oldDocId });
-
     for (const writer of writers) {
       await spreadsheet.shareSheet(drive, currentDocId, writer);
     }
@@ -116,6 +112,10 @@ const main = async () => {
       `Current document ► https://docs.google.com/spreadsheets/d/${currentDocId}/edit`
     );
     await helpers.recordCurrentDoc(currentDocId);
+
+    // Delete the old document, because we don't need it anymore.
+    console.log(`Deleting cloned document with id: ${oldDocId}`);
+    await drive.files.delete({ fileId: oldDocId });
   }
 };
 
