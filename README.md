@@ -16,7 +16,7 @@ You can omit any keys where the defaults would suffice. Here is what a commented
 would look like:
 ```
 {
-  // The size of the Tranco list to download, up to 1 million sites.
+  // The size of the Trexa list to download, up to ~150k sites.
   "listSize": 500,
   // The directory that will be used to store the downloaded list.
   "listDir": "data/",
@@ -76,6 +76,12 @@ A `--resume` option also exists, to continue collecting weekly results until the
 
 ```
 npm start 2019-05-23 -- --resume
+```
+
+A `--exact` option exists to allow testing of single dates that don't fall at the end of the week.
+
+```
+npm start 2020-05-28 -- --exact
 ```
 
 Code of Conduct

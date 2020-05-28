@@ -3,7 +3,7 @@ const bugs = require("./bugs");
 const fs = require("fs");
 const helpers = require("./helpers");
 const spreadsheet = require("./spreadsheet");
-const tranco = require("./tranco");
+const trexa = require("./trexa");
 
 const argv = process.argv.slice(2);
 
@@ -38,12 +38,14 @@ const main = async () => {
   const inputDate = argv[0] || maxDate;
   if (argv.includes("--resume")) {
     queryDates = helpers.resumeQueryDates(inputDate);
+  } else if (argv.includes("--exact")) {
+    queryDates = helpers.getQueryDates(inputDate, { exact: true });
   } else {
     queryDates = helpers.getQueryDates(inputDate);
   }
 
   for (const date of queryDates) {
-    const LIST_FILE = await tranco.fetchList(LIST_SIZE, LIST_DIR, date);
+    const LIST_FILE = await trexa.fetchList(LIST_SIZE, LIST_DIR, date);
     const bugTable = await bugs.fetchBugs(
       LIST_FILE,
       bugzillaKey,
