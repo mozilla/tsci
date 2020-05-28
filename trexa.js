@@ -108,7 +108,7 @@ const fetchList = async (
     .then(() => true)
     .catch(() => false);
   if (listIsCached) {
-    console.log("Found cached Tranco list");
+    console.log("Found cached Trexa list");
     return file;
   }
 

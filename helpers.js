@@ -205,7 +205,7 @@ function getQueryDates(inputDate) {
         queryDates.push(getEOW(parsed));
         parsed.setDate(parsed.getDate() + 7);
         if (getEOW(parsed) > today) {
-          // Stop if we get into future dates (the Tranco list won't
+          // Stop if we get into future dates (the Trexa list won't
           // have anything useful for us).
           break;
         }

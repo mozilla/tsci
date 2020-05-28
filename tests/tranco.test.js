@@ -1,5 +1,5 @@
 const fs = require("fs");
-const tranco = require("../tranco.js");
+const trexa = require("../trexa.js");
 
 const args = {
   listFile: "./tests/fixtures/copy.csv",
@@ -21,7 +21,7 @@ afterAll(async () => {
 });
 
 test("ignoredDomains get removed", async () => {
-  await tranco.removeIgnoredDomains(args).then(async returnedArgs => {
+  await trexa.removeIgnoredDomains(args).then(async returnedArgs => {
     const data = await fs.promises.readFile(returnedArgs.listFile, "utf8");
     const lines = data.split(/^/m);
 
@@ -32,7 +32,7 @@ test("ignoredDomains get removed", async () => {
 
 describe("clampListSize tests", () => {
   test("clampListSize current size > config.listSize", async () => {
-    await tranco.clampListSize(args).then(async csvPath => {
+    await trexa.clampListSize(args).then(async csvPath => {
       const data = await fs.promises.readFile(csvPath, "utf8");
       const lines = data.split(/\r?\n/);
 
@@ -43,7 +43,7 @@ describe("clampListSize tests", () => {
 
   test("clampListSize current size < config.listSize", async () => {
     args.config.listSize = 15;
-    await tranco.clampListSize(args).then(async csvPath => {
+    await trexa.clampListSize(args).then(async csvPath => {
       const data = await fs.promises.readFile(csvPath, "utf8");
       const lines = data.split(/\r?\n/);
 
