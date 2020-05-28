@@ -187,9 +187,10 @@ function getEOW(date) {
 /**
  * Return the list of query dates for a given inputDate
  * @param {Date} inputDate the date to start with.
+ * @param {Object} options
  * @returns an Array with all dates to gather bugs for
  */
-function getQueryDates(inputDate) {
+function getQueryDates(inputDate, options) {
   const queryDates = [];
   if (inputDate) {
     // We want to consider open bugs only until the end of the given week.
@@ -222,6 +223,9 @@ function getQueryDates(inputDate) {
           break;
         }
       }
+      // one day we can use options?.exact
+    } else if (options && options.exact) {
+      queryDates.push(parsed);
     } else {
       // A single date is specified.
       queryDates.push(getEOW(parsed));

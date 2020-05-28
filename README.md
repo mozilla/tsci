@@ -78,6 +78,12 @@ A `--resume` option also exists, to continue collecting weekly results until the
 npm start 2019-05-23 -- --resume
 ```
 
+A `--exact` option exists to allow testing of single dates that don't fall at the end of the week.
+
+```
+npm start 2020-05-28 -- --exact
+```
+
 Code of Conduct
 ===============
 

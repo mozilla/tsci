@@ -38,6 +38,8 @@ const main = async () => {
   const inputDate = argv[0] || maxDate;
   if (argv.includes("--resume")) {
     queryDates = helpers.resumeQueryDates(inputDate);
+  } else if (argv.includes("--exact")) {
+    queryDates = helpers.getQueryDates(inputDate, { exact: true });
   } else {
     queryDates = helpers.getQueryDates(inputDate);
   }
