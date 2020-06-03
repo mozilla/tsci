@@ -115,9 +115,8 @@ const main = async () => {
     );
     await helpers.recordCurrentDoc(currentDocId);
 
-    // Delete the old document, because we don't need it anymore.
-    console.log(`Deleting cloned document with id: ${oldDocId}`);
-    await drive.files.delete({ fileId: oldDocId });
+    // Log out the old document in case we need to find it later.
+    console.log(`Old document id: ${oldDocId}`);
   }
 };
 
